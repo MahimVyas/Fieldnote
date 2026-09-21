@@ -149,6 +149,16 @@ let activeRunId = null;
 let runStartedAt = 0;
 function escapeHtml(value) { const node = document.createElement('span'); node.textContent = value; return node.innerHTML; }
 function icon(name) { return `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
+async function apiFetch(url, opts) {
+  let response;
+  try { response = await fetch(url, opts); }
+  catch { throw new Error('Cannot reach the local server. Start it with npm start and reload the page.'); }
+  return response;
+}
+async function readJsonSafe(response) {
+  try { return await response.json(); }
+  catch { throw new Error('The server answered unreadably — is the Fieldnote backend running here?'); }
+}
 function oaBadge(source) {
   return source.open_access_url ? `<a class="oa-badge" href="${escapeHtml(source.open_access_url)}" target="_blank" rel="noopener noreferrer">${icon('file')} Open access</a>` : '';
 }
@@ -301,12 +311,12 @@ async function startRun(question, sources) {
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     showResultLoading();
-    const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
-    let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
+    const response = await apiFetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
+    let run = await readJsonSafe(response); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
     activeRunId = run.id;
     while (run.status === 'queued' || run.status === 'running') {
       if (cancelRequested) break;
-      updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 1000)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json();
+      updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 1000)); const progress = await apiFetch(`/api/runs/${run.id}`); run = await readJsonSafe(progress);
     }
     if (cancelRequested) {
       try { await fetch(`/api/runs/${run.id}`, { method: 'DELETE' }); } catch {}

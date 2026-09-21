@@ -209,3 +209,20 @@ test('full run flow renders, caches, and toasts', async () => {
   assert.ok(registry.get('#toast').textContent.includes('saved to your library'));
   assert.deepEqual([...vm.runInContext(`readCache()`, sandbox).map(p => p.id)], ['run-1']);
 });
+
+test('dead server produces a human toast, never raw fetch errors', async () => {
+  const { sandbox, registry } = loadFrontend();
+  sandbox.fetch = async () => { throw new TypeError('Failed to fetch'); };
+  await vm.runInContext(`startRun('Anything?', ['Web'])`, sandbox);
+  const text = registry.get('#toast').textContent;
+  assert.ok(text.includes('Cannot reach the local server'));
+  assert.ok(!text.includes('Failed to fetch'));
+});
+
+test('unreadable server replies produce a human toast', async () => {
+  const { sandbox } = loadFrontend();
+  await assert.rejects(
+    vm.runInContext(`readJsonSafe({ json: async () => { throw new SyntaxError("Unexpected token '<'"); } })`, sandbox),
+    /unreadably/
+  );
+});
