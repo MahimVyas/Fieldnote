@@ -149,7 +149,19 @@ body.working #prompt{opacity:.8}
 .icon-button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:10px 11px;cursor:pointer;font-size:15px;flex:none;align-self:center}
 .icon-button:hover{color:var(--orange);border-color:var(--orange)}
 #micButton.recording{color:#fff;background:#c74e43;border-color:#c74e43;animation:mic-pulse 1.2s ease-in-out infinite}
-@keyframes mic-pulse{50%{opacity:.55}}
+.grade{display:inline-block;font:600 10px 'DM Mono';letter-spacing:.5px;padding:4px 9px;border-radius:20px;margin-left:8px;vertical-align:2px}
+.grade.g0{color:#c74e43;background:rgba(199,78,67,.12)}
+.grade.g1{color:var(--orange);background:rgba(237,89,57,.12)}
+.grade.g2{color:var(--green);background:rgba(84,167,128,.14)}
+.grade.g3{color:var(--blue);background:rgba(97,115,218,.14)}
+.grade-details{margin:0 0 25px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:14px 18px}
+.grade-details summary{font:600 12.5px 'DM Sans';cursor:pointer;color:var(--ink)}
+.grade-bar{display:flex;align-items:center;gap:12px;margin-top:10px;font:11px 'DM Mono';color:var(--muted)}
+.grade-bar>span{flex:none;width:130px}
+.grade-bar>div{flex:1;height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.grade-bar i{display:block;height:100%;background:var(--orange);border-radius:inherit}
+.grade-bar>b{flex:none;font-weight:500}
+@media(max-width:760px){.grade-bar>span{width:110px}}
 /* ── Stop/share/cite/chips/jumps/progress/compare/stats/install/hint ── */
 .run-button.is-stop{background:#c74e43}
 .brief-jumps{display:none;gap:16px;max-width:1170px;margin:0 auto 22px;font:600 11.5px 'DM Sans'}

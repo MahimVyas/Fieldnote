@@ -63,6 +63,23 @@ test('OpenAlex inverted index reconstructs to readable text', () => {
   assert.equal(reconstructAbstract({}), '');
 });
 
+test('research grade scores signals into four labeled tiers', () => {
+  const { gradeResearch } = require('../agents');
+  const empty = gradeResearch([]);
+  assert.equal(empty.label, 'Limited');
+  assert.equal(empty.score, 0);
+  const rich = gradeResearch(Array.from({ length: 12 }, (_, i) => ({
+    title: `Paper ${i} on spaced repetition retention effects studied deeply`,
+    source_type: i % 4 === 0 ? 'Web' : i % 4 === 1 ? 'Video' : i % 4 === 2 ? 'Document' : 'Paper',
+    reliability: 'scholarly', relevance: { score: 85, terms: [] },
+    excerpt: 'Spaced repetition significantly improves long-term retention compared to massed practice in this extended longitudinal study of learners.'
+  })));
+  assert.equal(rich.label, 'Comprehensive');
+  assert.ok(rich.score >= 80);
+  assert.equal(rich.factors.reduce((n, f) => n + f.points, 0), rich.score);
+  assert.deepEqual(rich.factors.map(f => f.max), [25, 25, 20, 15, 15]);
+});
+
 test('JSON extractor tolerates fences and trailing prose', () => {
   const { extractJson } = require('../agents');
   assert.deepEqual(extractJson('```json\n{"a": 1, "t": "x { y } \\"q\\""}\n```\nsome trailing [ prose'), { a: 1, t: 'x { y } "q"' });

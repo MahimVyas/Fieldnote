@@ -216,7 +216,24 @@ function reviewEvidence(rawSources) {
   });
 }
 
-/* ── Citation validator ─────────────────────────────────────────── */
+/* ── Research grade: how good is the evidence base? ─────────────── */
+function gradeResearch(sources) {
+  const papers = sources.filter(s => s.source_type === 'Paper');
+  const types = new Set(sources.map(s => s.source_type)).size;
+  const rel = sources.length ? sources.reduce((n, s) => n + (s.relevance?.score || 0), 0) / sources.length : 0;
+  const substance = sources.length ? sources.filter(s => s.excerpt && !PLACEHOLDER_EXCERPT.test(s.excerpt) && s.excerpt.length > 120).length / sources.length : 0;
+  const factors = [
+    { name: 'Source volume', points: Math.round(Math.min(sources.length / 12, 1) * 25), max: 25 },
+    { name: 'Scholarly depth', points: Math.round(Math.min(papers.length / 6, 1) * 25), max: 25 },
+    { name: 'Source diversity', points: Math.round(Math.min(types / 4, 1) * 20), max: 20 },
+    { name: 'Match quality', points: Math.round(Math.min(rel / 100, 1) * 15), max: 15 },
+    { name: 'Excerpt substance', points: Math.round(substance * 15), max: 15 }
+  ];
+  const score = factors.reduce((n, f) => n + f.points, 0);
+  const tier = score >= 80 ? 3 : score >= 60 ? 2 : score >= 40 ? 1 : 0;
+  const label = ['Limited', 'Fair', 'Strong', 'Comprehensive'][tier];
+  return { score, label, tier, factors };
+}
 async function validateCitations(sources) {
   const promises = sources.map(async (s) => {
     if (!s.url) return { ...s, reachable: null };
@@ -364,15 +381,18 @@ async function writeBrief(question, sources) {  const papers = sources.filter(it
   };
   const aiOff = process.env.FIELDNOTE_AI === 'off';
   const llm = aiOff ? null : (await synthesizeWithOpenRouter(question, sources)) || await synthesizeBrief(question, sources) || await synthesizeWithPollinations(question, sources);
-  return llm || fallback;
+  const out = llm || fallback;
+  out.grade = gradeResearch(sources);
+  return out;
 }
 
 function briefToMarkdown(project) {
   const brief = project.brief || {}; const sources = project.sources || [];
   const line = items => (items || []).map((item, i) => typeof item === 'string' ? `${i + 1}. ${item}` : `${i + 1}. **${item.q}**\n   ${item.a}`).join('\n');
+  const grade = project.brief.grade ? ` · research grade: ${project.brief.grade.label} (${project.brief.grade.score}/100)` : '';
   const evidence = (brief.evidence_map || []).map(s => `- [${s.title}](${s.url || ''}) — ${s.publisher || s.source_type}${s.published_at ? `, ${s.published_at}` : ''} (${s.reliability}${s.relevance ? `, ${s.relevance}% match` : ''})${s.open_access_url ? ` · [open access](${s.open_access_url})` : ''}\n  > ${(s.excerpt || '').slice(0, 280)}`).join('\n');
   const all = sources.map(s => `- [${s.title}](${s.url || ''}) — ${s.publisher || s.source_type} (${s.source_type}, ${s.reliability})${s.open_access_url ? ` · [open access](${s.open_access_url})` : ''}`).join('\n');
-  return [`# ${project.question}`, ``, `*Fieldnote evidence brief · ${project.created_at || ''} · ${sources.length} sources · synthesis: ${brief.synthesis || 'template'}${brief.engine ? ` (${brief.engine})` : ''}*`, ``, `## Summary`, ``, brief.opening || '', ``, `## Key findings`, ``, line(brief.findings), ``, ...(brief.takeaways?.length ? [`## Key takeaways`, ``, line(brief.takeaways), ``] : []), `## Evidence`, ``, evidence || '_No evidence map._', ``, ...(brief.faq?.length ? [`## Study questions`, ``, line(brief.faq), ``] : []), `## Research gaps`, ``, line(brief.research_gaps), ``, `## All sources`, ``, all || '_None._', ``, `## Caveat`, ``, brief.caveat || '', ``].join('\n');
+  return [`# ${project.question}`, ``, `*Fieldnote evidence brief · ${project.created_at || ''} · ${sources.length} sources · synthesis: ${brief.synthesis || 'template'}${brief.engine ? ` (${brief.engine})` : ''}${grade}*`, ``, `## Summary`, ``, brief.opening || '', ``, `## Research grade: ${brief.grade ? `${brief.grade.label} (${brief.grade.score}/100)` : 'unrated'}`, ``, ...((brief.grade?.factors || []).map(f => `- ${f.name}: ${f.points}/${f.max}`)), ``, `## Key findings`, ``, line(brief.findings), ``, ...(brief.takeaways?.length ? [`## Key takeaways`, ``, line(brief.takeaways), ``] : []), `## Evidence`, ``, evidence || '_No evidence map._', ``, ...(brief.faq?.length ? [`## Study questions`, ``, line(brief.faq), ``] : []), `## Research gaps`, ``, line(brief.research_gaps), ``, `## All sources`, ``, all || '_None._', ``, `## Caveat`, ``, brief.caveat || '', ``].join('\n');
 }
 
-module.exports = { plan, reviewEvidence, writeBrief, briefToMarkdown, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery, extractJson };
+module.exports = { plan, reviewEvidence, writeBrief, briefToMarkdown, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery, extractJson, gradeResearch };
