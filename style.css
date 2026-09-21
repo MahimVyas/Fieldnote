@@ -197,3 +197,6 @@ a.source:hover{background:rgba(237,89,57,.05)}
 .mini-button,.oa-badge,.connect-btn{display:inline-flex;align-items:center;gap:6px}
 .gap-dig{display:flex;align-items:center;gap:6px}
 .theme-icon{display:inline-flex}
+/* ── Load spotlight: brief glow marks the chat bar ── */
+.search-card{animation:bar-spotlight 5s ease-out 1}
+@keyframes bar-spotlight{0%{outline:2px solid rgba(237,89,57,0);outline-offset:6px}25%{outline:2px solid rgba(237,89,57,.45);outline-offset:6px}50%{outline:2px solid rgba(237,89,57,.1);outline-offset:6px}75%{outline:2px solid rgba(237,89,57,.45);outline-offset:6px}100%{outline:2px solid rgba(237,89,57,0);outline-offset:6px}}
