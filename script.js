@@ -116,13 +116,14 @@ function setResultProgress(percent, label, step) {
   $('#loadingPercent').textContent = `${visibleProgress}%`;
   $('#loadingLabel').textContent = label;
   document.querySelectorAll('.loading-steps span').forEach(item => item.classList.toggle('active', item.dataset.step === step));
+  const order = ['plan', 'gather', 'review', 'brief']; const at = order.indexOf(step);
+  document.querySelectorAll('.loading-steps span').forEach(item => item.classList.toggle('done', order.indexOf(item.dataset.step) >= 0 && order.indexOf(item.dataset.step) < at));
 }
 function showResultLoading() {
   visibleProgress = 8;
   const box = $('#resultsLoading'); box.hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add('open')));
   setResultProgress(8, 'Planner is mapping the research question', 'plan');
-  setTimeout(() => $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
 function syncResultProgress(run) {
   const complete = run.agents.filter(agent => agent.status === 'completed' || agent.status === 'failed').length;
