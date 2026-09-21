@@ -262,6 +262,26 @@ async function loadConversations() {
 }
 loadConversations();
 
+let clearArmed = false; let clearTimer = 0;
+$('#clearLibrary').addEventListener('click', async () => {
+  const btn = $('#clearLibrary'); if (!btn || btn.hidden || btn.disabled) return;
+  if (!clearArmed) {
+    clearArmed = true; btn.classList.add('armed'); btn.textContent = 'Sure? Click again';
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(() => { clearArmed = false; btn.classList.remove('armed'); btn.innerHTML = `${icon('trash')} Delete all`; }, 3000);
+    return;
+  }
+  clearTimeout(clearTimer); clearArmed = false; btn.classList.remove('armed'); btn.disabled = true;
+  const items = [...document.querySelectorAll('.library-list .library-item')];
+  const ids = items.map(el => el.querySelector('[data-delete]')?.dataset.delete).filter(Boolean);
+  items.forEach((el, i) => { el.style.transitionDelay = `${i * 70}ms`; el.classList.add('deleting'); });
+  setTimeout(async () => {
+    for (const id of ids) { try { await fetch(`/api/projects/${id}`, { method: 'DELETE' }); } catch {} uncacheProject(id); }
+    btn.disabled = false; btn.innerHTML = `${icon('trash')} Delete all`;
+    loadLibrary(); loadConversations(); toast('Library cleared.');
+  }, items.length * 70 + 450);
+});
+
 async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { list.innerHTML = '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>'; return; } list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
   try {
     const response = await fetch('/api/projects'); const projects = mergedLibrary(await response.json()); renderLibraryList(projects);
@@ -273,6 +293,7 @@ async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { lis
 }
 function renderLibraryList(projects) {
   const list = $('.library-list'); if (!list) return;
+  const clearBtn = $('#clearLibrary'); if (clearBtn) clearBtn.hidden = !projects.length;
   document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
   list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
   list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));

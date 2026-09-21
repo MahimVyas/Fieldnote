@@ -111,6 +111,13 @@ body.working .finding-layout,body.working .report-details{display:none}
 .export-row{display:flex;gap:6px;flex-wrap:wrap}
 .mini-button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:9px 11px;font:600 11px 'DM Sans';cursor:pointer}
 .mini-button:hover{color:var(--ink);border-color:var(--orange)}
+.mini-button:disabled{opacity:.5;cursor:default}
+.mini-button.danger{color:#c74e43;border-color:#c74e43}
+.mini-button.danger:hover{background:rgba(199,78,67,.08);border-color:#c74e43;color:#c74e43}
+.mini-button.danger.armed{background:#c74e43;border-color:#c74e43;color:#fff}
+.library-toolbar{display:flex;justify-content:flex-end;margin:0 0 12px}
+.library-list .library-item{transition:opacity .35s ease,transform .35s ease}
+.library-list .library-item.deleting{opacity:0;transform:translateX(48px)}
 .study-block{display:grid;grid-template-columns:1fr 1fr;gap:52px;margin:25px 0}
 .study-block h4{font:600 17px 'Playfair Display';margin:0 0 6px}
 .study-block p{font-size:12px;line-height:1.5;color:#5f5b53;border-top:1px solid #e3ded4;padding:12px 0;margin:0}
