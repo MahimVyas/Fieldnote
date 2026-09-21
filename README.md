@@ -74,6 +74,11 @@ With Docker Compose (persists data in a named volume):
 docker compose up --build
 ```
 
+> **GitHub Pages preview:** the workflow in `.github/workflows/pages.yml`
+> publishes the UI as a static preview. Research runs, the library, and
+> exports need the Node server, so on Pages the app switches to a silent
+> demo mode (no API calls, no console errors) instead.
+
 Optional integrations via environment variables (see [Configuration](#configuration)):
 
 ```bash

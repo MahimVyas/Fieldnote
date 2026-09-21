@@ -1,4 +1,8 @@
 const $ = (s) => document.querySelector(s);
+/* Static hosts (GitHub Pages, file://) have no API backend. Detect it
+   synchronously so not a single failing request ever hits the console. */
+const DEMO = /(^|\.)github\.io$/.test(location.hostname) || location.protocol === 'file:';
+const DEMO_MESSAGE = 'Static preview only — run npm start locally for full research.';
 let toastTimer = 0;
 const toast = (message) => { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200); };
 const promptEl = $('#prompt');
@@ -121,6 +125,7 @@ function updateDockMeta() {
   el.innerHTML = `${escapeHtml(sources.join(' · ') || 'No sources')} · ${escapeHtml(depth)} <span>edit ⌄</span>`;
 }
 async function startRun(question, sources) {
+  if (DEMO) return toast(DEMO_MESSAGE);
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
   if (!navigator.onLine) return toast('You appear to be offline. Web and paper sources need a connection.');
   updateDockMeta();
@@ -154,13 +159,14 @@ $('#newResearch').addEventListener('click', () => { document.body.classList.remo
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
 $('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.summary-card'); if (!summary) return; summary.scrollIntoView({ behavior: 'smooth', block: 'center' }); summary.classList.remove('flash'); void summary.offsetWidth; summary.classList.add('flash'); setTimeout(() => summary.classList.remove('flash'), 1300); });
 function exportUrl(format) { return currentProject ? `/api/projects/${currentProject.id}/export?format=${format}` : null; }
-$('#expMd').addEventListener('click', () => { const url = exportUrl('md'); if (url) window.location.href = url; else toast('Run a research question first.'); });
-$('#expJson').addEventListener('click', () => { const url = exportUrl('json'); if (url) window.location.href = url; else toast('Run a research question first.'); });
+function guardExport() { if (DEMO) { toast(DEMO_MESSAGE); return false; } if (!currentProject) { toast('Run a research question first.'); return false; } return true; }
+$('#expMd').addEventListener('click', () => { if (guardExport()) window.location.href = exportUrl('md'); });
+$('#expJson').addEventListener('click', () => { if (guardExport()) window.location.href = exportUrl('json'); });
 $('#expPrint').addEventListener('click', () => window.print());
 $('#expCopy').addEventListener('click', async () => {
-  const url = exportUrl('md'); if (!url) return toast('Run a research question first.');
+  if (!guardExport()) return;
   try {
-    const response = await fetch(url); if (!response.ok) throw new Error('Export failed.');
+    const response = await fetch(exportUrl('md')); if (!response.ok) throw new Error('Export failed.');
     await navigator.clipboard.writeText(await response.text()); toast('Brief copied to clipboard.');
   } catch { toast('Could not copy. Try the Markdown download instead.'); }
 });
@@ -184,6 +190,7 @@ window.addEventListener('load', queueLift);
 queueLift();
 
 async function refreshLibraryCount() {
+  if (DEMO) return;
   try {
     const response = await fetch('/api/projects'); if (!response.ok) return;
     const projects = await response.json();
@@ -195,6 +202,7 @@ updateDockMeta();
 
 async function loadConversations() {
   const section = $('#conversations'); const list = $('#conversationList'); if (!section || !list) return;
+  if (DEMO) { section.hidden = true; return; }
   try {
     const response = await fetch('/api/projects'); if (!response.ok) throw new Error('unavailable');
     const projects = await response.json();
@@ -208,17 +216,18 @@ async function loadConversations() {
 }
 loadConversations();
 
-async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
+async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { list.innerHTML = '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>'; return; } list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
   try {
     const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); loadConversations(); }));
-  } catch { list.innerHTML = '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
+  } catch { list.innerHTML = DEMO ? '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>' : '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
 }
 
 (async function serviceStatus() {
   const dot = $('#footDot'); const text = $('#footText'); if (!dot || !text) return;
+  if (DEMO) { text.textContent = 'static preview — run npm start locally for full research'; return; }
   try {
     const response = await fetch('/api/health'); if (!response.ok) throw new Error('unhealthy');
     const health = await response.json();
