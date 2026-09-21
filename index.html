@@ -54,12 +54,13 @@
   <noscript><p style="max-width:640px;margin:40px auto;padding:0 20px;line-height:1.6">Fieldnote is a local-first research workbench: specialist agents gather web, scholarly, video, and private sources into traceable evidence briefs. Enable JavaScript to run research.</p></noscript>
   <header>
     <a class="brand" href="#"><span class="brand-mark">f</span><span>fieldnote</span></a>
-    <nav aria-label="Main navigation">
+    <nav aria-label="Main navigation" id="mainNav">
       <button class="nav-link active" data-view="research">Research</button>
       <button class="nav-link" data-view="library">Library <span class="count">0</span></button>
       <button class="nav-link" data-view="stack">Tech stack</button>
     </nav>
     <div class="header-actions">
+      <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav"><span></span><span></span><span></span></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-icon"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
       <button class="new-button" id="newResearch"><span><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span> New research</button>
     </div>

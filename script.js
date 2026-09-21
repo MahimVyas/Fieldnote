@@ -119,10 +119,22 @@ document.querySelectorAll('.nav-link').forEach(button => button.addEventListener
   button.classList.add('active'); button.setAttribute('aria-current', 'page');
   ['research', 'stack', 'library'].forEach(view => $('#'+view+'View').hidden = button.dataset.view !== view);
   if (button.dataset.view === 'library') loadLibrary();
+  setNav(false);
   window.scrollTo({ top: 0 });
   const heading = { research: '#researchView .hero h1', stack: '#stackView .stack-hero h1', library: '#libraryView .library h1' }[button.dataset.view];
   const target = heading && $(heading); if (target) target.focus({ preventScroll: true });
 }));
+function setNav(open) {
+  document.body.classList.toggle('nav-open', open);
+  const toggle = $('#menuToggle'); if (!toggle) return;
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+}
+$('#menuToggle').addEventListener('click', event => { event.stopPropagation(); setNav(!document.body.classList.contains('nav-open')); });
+document.addEventListener('click', event => {
+  if (document.body.classList.contains('nav-open') && !event.target.closest('header')) setNav(false);
+});
+document.addEventListener('keydown', event => { if (event.key === 'Escape') setNav(false); });
 document.querySelectorAll('.source-toggle').forEach(label => label.addEventListener('click', () => setTimeout(() => { label.classList.toggle('checked', label.querySelector('input').checked); updateDockMeta(); })));
 
 function setRunning(running) {
