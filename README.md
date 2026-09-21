@@ -28,9 +28,9 @@ no `npm install` required.
 ## Features
 
 - **Four specialist agents** — Web Scout (Wikipedia + optional SearXNG),
-  Paper Trail (Crossref + Semantic Scholar + arXiv + OpenAlex), Video
-  Listener (live YouTube search), and Document Reader (local `.md`/`.txt`
-  files) run independently and in parallel. **Thorough** depth adds full
+  Paper Trail (Crossref + Semantic Scholar + arXiv + OpenAlex, including
+  open-access PDF links), Video Listener (live YouTube search), and Document
+  Reader (local `.md`/`.txt` files) run independently and in parallel. **Thorough** depth adds full
   article extracts, a second query-expansion round, and higher result caps;
   **Quick** stays fast with single-round snippets.
 - **Evidence reviewer** — deduplicates sources and ranks them by relevance,
@@ -102,6 +102,8 @@ Question → Planner → ┌─────────────┐
    always shows which synthesis produced it.
 5. The run result is persisted atomically to `data/research.json` and served
    back to the UI, which renders the summary, evidence map, and coverage.
+   Every research gap carries a **Dig deeper** button that starts a focused
+   follow-up run over the same sources.
 
 ## Configuration
 

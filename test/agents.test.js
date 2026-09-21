@@ -92,6 +92,13 @@ test('brief with real excerpts uses extractive synthesis', async () => {
   assert.ok(brief.findings[0].includes('—'));
 });
 
+test('evidence map preserves open-access URLs', async () => {
+  const brief = await writeBrief('open access research', [
+    { title: 'OA Paper', source_type: 'Paper', reliability: 'scholarly', url: 'https://doi.org/10/example', excerpt: 'Too short.' , open_access_url: 'https://example.org/paper.pdf' }
+  ]);
+  assert.equal(brief.evidence_map[0].open_access_url, 'https://example.org/paper.pdf');
+});
+
 test('document reader matches local files and ignores other extensions', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'fieldnote-docs-'));
   await fs.writeFile(path.join(dir, 'notes.md'), 'Independent education benefits from blended learning outcomes.');

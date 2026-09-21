@@ -74,12 +74,13 @@ async function fetchWikipediaExtracts(titles) {
 }
 async function fetchOpenAlex(question, limit) {
   try {
-    const data = await fetchJson(`https://api.openalex.org/works?search=${query(question)}&per-page=${limit}&select=id,doi,title,abstract_inverted_index,publication_year,cited_by_count,primary_location`);
+    const data = await fetchJson(`https://api.openalex.org/works?search=${query(question)}&per-page=${limit}&select=id,doi,title,abstract_inverted_index,publication_year,cited_by_count,primary_location,best_oa_location`);
     return (data.results || []).map(item => source({
       title: clean(item.title), url: item.doi || item.primary_location?.landing_page_url, source_type: 'Paper',
       excerpt: reconstructAbstract(item.abstract_inverted_index).slice(0, 900) || 'Scholarly record returned by OpenAlex.',
       published_at: item.publication_year ? String(item.publication_year) : null,
-      publisher: clean(item.primary_location?.source?.display_name) || 'OpenAlex', reliability: 'scholarly', citations: Number(item.cited_by_count || 0)
+      publisher: clean(item.primary_location?.source?.display_name) || 'OpenAlex', reliability: 'scholarly', citations: Number(item.cited_by_count || 0),
+      open_access_url: item.best_oa_location?.pdf_url || item.best_oa_location?.landing_page_url || null
     }));
   } catch { return []; }
 }
@@ -257,7 +258,7 @@ async function synthesizeBrief(question, sources) {
     if (!parsed.opening || !Array.isArray(parsed.findings) || !Array.isArray(parsed.research_gaps)) throw new Error('Invalid brief structure');
     const papers = sources.filter(s => s.source_type === 'Paper'); const docs = sources.filter(s => s.source_type === 'Document');
     const byType = type => sources.filter(s => s.source_type === type).length;
-    return { ...parsed, synthesis: 'llm', coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) }, evidence_map: parsed.evidence_map || sources.slice(0, 5).map(s => ({ title: s.title, source_type: s.source_type, reliability: s.reliability, relevance: s.relevance?.score || null, excerpt: s.excerpt, url: s.url })), research_gaps: parsed.research_gaps || ['This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.'], synthesized: true, citations_validated: reachable.length, citations_unreachable: unreachable.length };
+    return { ...parsed, synthesis: 'llm', coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) }, evidence_map: parsed.evidence_map || sources.slice(0, 5).map(s => ({ title: s.title, source_type: s.source_type, reliability: s.reliability, relevance: s.relevance?.score || null, excerpt: s.excerpt, url: s.url, open_access_url: s.open_access_url || null })), research_gaps: parsed.research_gaps || ['This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.'], synthesized: true, citations_validated: reachable.length, citations_unreachable: unreachable.length };
   } catch { return null; }
 }
 
@@ -265,7 +266,7 @@ async function synthesizeBrief(question, sources) {
 async function writeBrief(question, sources) {
   const papers = sources.filter(item => item.source_type === 'Paper'); const docs = sources.filter(item => item.source_type === 'Document');
   const byType = type => sources.filter(item => item.source_type === type).length;
-  const topEvidence = sources.slice(0, 5).map(item => ({ title: item.title, source_type: item.source_type, reliability: item.reliability, relevance: item.relevance?.score || null, excerpt: item.excerpt, url: item.url }));
+  const topEvidence = sources.slice(0, 5).map(item => ({ title: item.title, source_type: item.source_type, reliability: item.reliability, relevance: item.relevance?.score || null, excerpt: item.excerpt, url: item.url, open_access_url: item.open_access_url || null }));
   const extracted = extractiveFindings(question, sources, 3);
   const contextLine = docs.length ? `${docs.length} matching private documents were found. They remain local to this deployment and should be compared with independent sources.` : papers.length ? `${papers.length} scholarly records were retrieved. Begin with “${papers[0].title}”; assess study design, population, publication venue, and date before using it as evidence.` : 'No scholarly records were returned. Refine the terms or add a specialist literature source before drawing a research conclusion.';
   const fallback = {

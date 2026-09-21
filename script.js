@@ -59,16 +59,34 @@ function setRunning(running) {
   document.querySelectorAll('.agent-card.active-agent').forEach(card => card.classList.toggle('is-working', running));
 }
 function escapeHtml(value) { const node = document.createElement('span'); node.textContent = value; return node.innerHTML; }
+function oaBadge(source) {
+  return source.open_access_url ? `<a class="oa-badge" href="${escapeHtml(source.open_access_url)}" target="_blank" rel="noopener noreferrer">Open access ↗</a>` : '';
+}
+function oaChip(source) {
+  return source.open_access_url ? `<span class="oa-badge" data-href="${escapeHtml(source.open_access_url)}" role="link" tabindex="0">Open access ↗</span>` : '';
+}
+document.addEventListener('click', event => {
+  const chip = event.target.closest ? event.target.closest('.oa-badge[data-href]') : null;
+  if (!chip) return; event.preventDefault(); event.stopPropagation();
+  window.open(chip.dataset.href, '_blank', 'noopener');
+});
+document.addEventListener('keydown', event => {
+  const chip = event.target && event.target.classList && event.target.classList.contains('oa-badge') ? event.target : null;
+  if (!chip || !chip.dataset.href || (event.key !== 'Enter' && event.key !== ' ')) return;
+  event.preventDefault(); window.open(chip.dataset.href, '_blank', 'noopener');
+});
 function sourceHtml(source) {
   const type = source.source_type.toLowerCase(); const date = source.published_at ? ` · ${source.published_at}` : '';
-  const score = source.relevance?.score ? ` · ${source.relevance.score}% match` : ''; const body = `<span class="source-type ${type}-type">${source.source_type.toUpperCase()}</span><div><b>${escapeHtml(source.title)}</b><small>${escapeHtml(source.publisher || source.source_type)}${date}${score} · ${escapeHtml(source.reliability || 'unrated')}</small><p class="source-excerpt">${escapeHtml(source.excerpt || 'No excerpt available.')}</p></div><em>${source.url ? '↗' : 'local'}</em>`;
+  const score = source.relevance?.score ? ` · ${source.relevance.score}% match` : ''; const body = `<span class="source-type ${type}-type">${source.source_type.toUpperCase()}</span><div><b>${escapeHtml(source.title)}</b><small>${escapeHtml(source.publisher || source.source_type)}${date}${score} · ${escapeHtml(source.reliability || 'unrated')}</small><p class="source-excerpt">${escapeHtml(source.excerpt || 'No excerpt available.')}</p>${oaChip(source)}</div><em>${source.url ? '↗' : 'local'}</em>`;
   return source.url ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source">${body}</a>` : `<div class="source source-local">${body}</div>`;
 }
 function updateAgents(agents) {
   const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'], 'document-reader': ['#docCount', '.agent-card:nth-child(4)'] };
   agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
 }
+let currentProject = null;
 function renderProject(project) {
+  currentProject = project;
   const sources = project.sources || []; const byType = type => sources.filter(s => s.source_type === type).length;
   $('#statusText').textContent = `${sources.length} sources collected`;
   $('#webCount').textContent = `${byType('Web')} sources found`; $('#videoCount').textContent = `${byType('Video')} video query ready`; $('#paperCount').textContent = `${byType('Paper')} papers indexed`; const docCount = $('#docCount'); if (docCount) docCount.textContent = `${byType('Document')} documents matched`;
@@ -80,13 +98,13 @@ function renderProject(project) {
   $('#allSources').addEventListener('click', () => { document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>All evidence</span><b>${sources.length} sources</b></div>${sources.map(sourceHtml).join('')}`; });
   document.querySelector('.report-details')?.remove();
   const coverage = project.brief.coverage || {}; const evidence = project.brief.evidence_map || []; const gaps = project.brief.research_gaps || [];
-  document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div><div class="evidence-map"><div><h4>Most relevant evidence</h4>${evidence.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p></div></article>`).join('')}</div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map(gap => `<p>${escapeHtml(gap)}</p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
+  document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div><div class="evidence-map"><div><h4>Most relevant evidence</h4>${evidence.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`).join('')}</div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map((gap, index) => `<p>${escapeHtml(gap)}<button class="gap-dig" data-gap="${index}">Dig deeper <span>→</span></button></p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
+  document.querySelectorAll('.gap-dig').forEach(button => button.addEventListener('click', () => digDeeper(Number(button.dataset.gap))));
   if (project.errors?.length) toast(`Partial result: ${project.errors[0]}`);
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-$('#runResearch').addEventListener('click', async () => {
-  const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
+async function startRun(question, sources) {
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
   if (!navigator.onLine) return toast('You appear to be offline. Web and paper sources need a connection.');
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -98,6 +116,21 @@ $('#runResearch').addEventListener('click', async () => {
     updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; toast(error.message); }
   finally { setRunning(false); }
+}
+
+function digDeeper(gapIndex) {
+  if (!currentProject) return;
+  const gap = (currentProject.brief.research_gaps || [])[gapIndex]; if (!gap) return;
+  const sources = [...new Set((currentProject.agents || []).map(a => a.source).filter(s => ['Web', 'Papers', 'YouTube', 'Documents'].includes(s)))];
+  const question = `${gap} [Follow-up research on: ${currentProject.question}]`;
+  $('#prompt').value = question;
+  toast('Digging deeper into this gap…');
+  startRun(question, sources.length ? sources : ['Web', 'Papers']);
+}
+
+$('#runResearch').addEventListener('click', async () => {
+  const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
+  startRun(question, sources);
 });
 $('#newResearch').addEventListener('click', () => { $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
