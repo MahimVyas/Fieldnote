@@ -2,8 +2,17 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { plan, reviewEvidence, writeBrief } = require('./agents');
+const { plan, reviewEvidence, writeBrief, briefToMarkdown } = require('./agents');
 const { version } = require('./package.json');
+
+/* Load local .env (no dependencies): real environment always wins. */
+try {
+  const envText = require('node:fs').readFileSync(path.join(__dirname, '.env'), 'utf8');
+  for (const line of envText.split('\n')) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (match && !(match[1] in process.env) && !line.trim().startsWith('#')) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
+  }
+} catch {}
 
 const root = __dirname;
 const startedAt = Date.now();
@@ -17,8 +26,8 @@ function log(status, req, started, requestId, error) {
   const detail = error ? ` error="${String(error.message || error).slice(0, 160)}"` : '';
   console.log(`${req.method} ${new URL(req.url, 'http://localhost').pathname} ${status} ${elapsed}ms id=${requestId}${detail}`);
 }
-function send(res, req, started, requestId, status, body, type = 'application/json; charset=utf-8') {
-  const headers = { 'Content-Type': type, 'Cache-Control': type.includes('html') ? 'no-cache' : 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Content-Security-Policy': csp, 'X-Request-Id': requestId };
+function send(res, req, started, requestId, status, body, type = 'application/json; charset=utf-8', extraHeaders = {}) {
+  const headers = { 'Content-Type': type, 'Cache-Control': type.includes('html') ? 'no-cache' : 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Content-Security-Policy': csp, 'X-Request-Id': requestId, ...extraHeaders };
   res.writeHead(status, headers); res.end(status === 204 ? undefined : type.includes('json') ? JSON.stringify(body) : body);
   log(status, req, started, requestId);
 }
@@ -59,6 +68,15 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/runs') return send(res, req, started, requestId, 202, await createRun(await readJson(req)));
     if (req.method === 'GET' && /^\/api\/runs\/[0-9a-f-]+$/i.test(url.pathname)) { const run = runs.get(url.pathname.split('/').pop()); return run ? send(res, req, started, requestId, 200, publicRun(run)) : send(res, req, started, requestId, 404, { error: 'Research run not found.' }); }
     if (req.method === 'DELETE' && /^\/api\/projects\/[0-9a-f-]+$/i.test(url.pathname)) { const id = url.pathname.split('/').pop(); await writeProjects((await readProjects()).filter(project => project.id !== id)); return send(res, req, started, requestId, 204, ''); }
+    if (req.method === 'GET' && /^\/api\/projects\/[0-9a-f-]+\/export$/i.test(url.pathname)) {
+      const id = url.pathname.split('/')[3]; const project = (await readProjects()).find(p => p.id === id);
+      if (!project) return send(res, req, started, requestId, 404, { error: 'Research not found.' });
+      const format = url.searchParams.get('format') === 'json' ? 'json' : 'md';
+      const filename = `fieldnote-${id.slice(0, 8)}.${format}`;
+      const isJson = format === 'json';
+      const body = isJson ? project : briefToMarkdown(project);
+      return send(res, req, started, requestId, 200, body, isJson ? 'application/json; charset=utf-8' : 'text/markdown; charset=utf-8', { 'Content-Disposition': `attachment; filename="${filename}"` });
+    }
     if (req.method !== 'GET') return send(res, req, started, requestId, 405, { error: 'Method not allowed.' });
     const file = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, ''); const target = path.resolve(root, file);
     if (!target.startsWith(root + path.sep) || target.includes(`${path.sep}data${path.sep}`) || target.includes(`${path.sep}documents${path.sep}`)) return send(res, req, started, requestId, 403, { error: 'Forbidden.' });

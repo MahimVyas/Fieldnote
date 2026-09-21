@@ -62,6 +62,19 @@ footer{margin-top:auto}
 .oa-badge{display:inline-block;margin-top:8px;font:600 10px 'DM Mono';letter-spacing:.4px;color:var(--green);border:1px solid currentColor;border-radius:4px;padding:3px 7px;text-decoration:none}
 .oa-badge:hover{background:var(--green);color:#fff;border-color:var(--green)}
 span.oa-badge{cursor:pointer}
+.results-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.export-row{display:flex;gap:6px;flex-wrap:wrap}
+.mini-button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:9px 11px;font:600 11px 'DM Sans';cursor:pointer}
+.mini-button:hover{color:var(--ink);border-color:var(--orange)}
+.study-block{display:grid;grid-template-columns:1fr 1fr;gap:52px;margin:25px 0}
+.study-block h4{font:600 17px 'Playfair Display';margin:0 0 6px}
+.study-block p{font-size:12px;line-height:1.5;color:#5f5b53;border-top:1px solid #e3ded4;padding:12px 0;margin:0}
+.study-block details{border-top:1px solid #e3ded4;padding:12px 0}
+.study-block summary{font-size:12px;font-weight:600;cursor:pointer;line-height:1.5}
+.study-block details p{border:0;padding:7px 0 0}
+[data-theme="dark"] .study-block p,[data-theme="dark"] .study-block details{border-top-color:var(--line)}
+[data-theme="dark"] .study-block p{color:#b6b0a3}
+@media(max-width:760px){.study-block{grid-template-columns:1fr;gap:24px}.results-actions{align-items:flex-start;flex-direction:column}}
 .gap-dig{display:block;background:none;border:0;color:var(--orange);font:600 11px 'DM Sans';cursor:pointer;padding:8px 0 0}
 .gap-dig span{font-size:14px;margin-left:2px}
 /* ── Responsive refinements ── */

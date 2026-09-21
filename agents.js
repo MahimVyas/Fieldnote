@@ -225,7 +225,52 @@ async function validateCitations(sources) {
   return Promise.all(promises);
 }
 
-/* ── LLM synthesis layer (Ollama) ──────────────────────────────── */
+/* ── LLM synthesis layer (OpenRouter → Ollama → extractive) ─────── */
+const AI_BRIEF_FIELDS = `Return ONLY a valid JSON object with exactly these fields:
+- "opening": one sentence summarizing what was found and how many sources of each type
+- "findings": array of 3 short bullet strings, each a key insight traced to a specific source
+- "takeaways": array of up to 5 one-sentence practical takeaways for someone studying this topic
+- "faq": array of up to 5 objects {"q": "study question", "a": "answer grounded in the sources"} a learner could use for self-testing
+- "caveat": one sentence about limitations
+- "evidence_map": array of up to 5 objects: {title, source_type, reliability, relevance, excerpt, url}
+- "research_gaps": array of 3 strings describing what remains unanswered
+
+Do not add any commentary outside the JSON object.`;
+function parseAiBrief(raw, question, sources, engine, extra = {}) {
+  const start = raw.indexOf('{'); const end = raw.lastIndexOf('}') + 1;
+  if (start < 0 || end <= start) throw new Error('No JSON in response');
+  const parsed = JSON.parse(raw.slice(start, end));
+  if (!parsed.opening || !Array.isArray(parsed.findings) || !Array.isArray(parsed.research_gaps)) throw new Error('Invalid brief structure');
+  const byType = type => sources.filter(s => s.source_type === type).length;
+  return { ...parsed,
+    synthesis: 'llm', engine,
+    takeaways: Array.isArray(parsed.takeaways) ? parsed.takeaways.slice(0, 5) : [],
+    faq: (Array.isArray(parsed.faq) ? parsed.faq : []).filter(f => f && f.q && f.a).slice(0, 5),
+    coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) },
+    evidence_map: parsed.evidence_map || sources.slice(0, 5).map(s => ({ title: s.title, source_type: s.source_type, reliability: s.reliability, relevance: s.relevance?.score || null, excerpt: s.excerpt, url: s.url, open_access_url: s.open_access_url || null })),
+    research_gaps: parsed.research_gaps || ['This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.'],
+    synthesized: true, ...extra };
+}
+async function synthesizeWithOpenRouter(question, sources) {
+  const apiKey = process.env.FIELDNOTE_OPENROUTER_API_KEY;
+  if (!apiKey) return null;
+  const model = process.env.FIELDNOTE_OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  const validated = await validateCitations(sources.slice(0, 10));
+  const reachable = validated.filter(v => v.reachable).slice(0, 10);
+  const top = reachable.map(s => `[${s.source_type}] ${s.title} (${s.reliability})${s.excerpt ? ' — ' + s.excerpt.slice(0, 300) : ''}${s.url ? ' — ' + s.url : ''}`).join('\n');
+  const prompt = [`You are an evidence reviewer producing NotebookLM-style study material. Read these sources and produce a traceable, caveated evidence brief plus study aids. Do not fabricate or infer anything beyond what the sources state.`, ``, `Question: ${question}`, ``, `Sources (${sources.length} total, ${reachable.length} reachable):\n${top}`, ``, AI_BRIEF_FIELDS].join('\n');
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST', signal: AbortSignal.timeout(45000),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'Fieldnote' },
+      body: JSON.stringify({ model, temperature: 0.2, max_tokens: 2500, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '';
+    return parseAiBrief(raw, question, sources, 'openrouter', { model, citations_validated: reachable.length, citations_unreachable: validated.length - reachable.length });
+  } catch (error) { console.error(`OpenRouter synthesis failed: ${error.message}`); return null; }
+}
 async function synthesizeBrief(question, sources) {
   const ollamaUrl = process.env.FIELDNOTE_OLLAMA_URL || 'http://localhost:11434';
   /* Validate that each source URL is reachable */
@@ -240,14 +285,7 @@ async function synthesizeBrief(question, sources) {
     ``,
     `Sources (${sources.length} total, ${reachable.length} reachable, ${unreachable.length} unreachable — show these as flagged):\n${top}`,
     ``,
-    `Return ONLY a valid JSON object with exactly these fields:`,
-    `- "opening": one sentence summarizing what was found and how many sources of each type`,
-    `- "findings": array of 3 short bullet strings, each a key insight traced to a specific source`,
-    `- "caveat": one sentence about limitations`,
-    `- "evidence_map": array of up to 5 objects: {title, source_type, reliability, relevance, excerpt, url}`,
-    `- "research_gaps": array of 3 strings describing what remains unanswered`,
-    ``,
-    `Do not add any commentary outside the JSON object.`
+    AI_BRIEF_FIELDS
   ].join('\n');
   try {
     const data = await fetchJson(`${ollamaUrl}/api/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'llama3.1', prompt, stream: false }) });
@@ -258,7 +296,7 @@ async function synthesizeBrief(question, sources) {
     if (!parsed.opening || !Array.isArray(parsed.findings) || !Array.isArray(parsed.research_gaps)) throw new Error('Invalid brief structure');
     const papers = sources.filter(s => s.source_type === 'Paper'); const docs = sources.filter(s => s.source_type === 'Document');
     const byType = type => sources.filter(s => s.source_type === type).length;
-    return { ...parsed, synthesis: 'llm', coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) }, evidence_map: parsed.evidence_map || sources.slice(0, 5).map(s => ({ title: s.title, source_type: s.source_type, reliability: s.reliability, relevance: s.relevance?.score || null, excerpt: s.excerpt, url: s.url, open_access_url: s.open_access_url || null })), research_gaps: parsed.research_gaps || ['This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.'], synthesized: true, citations_validated: reachable.length, citations_unreachable: unreachable.length };
+    return { ...parsed, synthesis: 'llm', engine: 'ollama', takeaways: Array.isArray(parsed.takeaways) ? parsed.takeaways.slice(0, 5) : [], faq: (Array.isArray(parsed.faq) ? parsed.faq : []).filter(f => f && f.q && f.a).slice(0, 5), coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) }, evidence_map: parsed.evidence_map || sources.slice(0, 5).map(s => ({ title: s.title, source_type: s.source_type, reliability: s.reliability, relevance: s.relevance?.score || null, excerpt: s.excerpt, url: s.url, open_access_url: s.open_access_url || null })), research_gaps: parsed.research_gaps || ['This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.'], synthesized: true, citations_validated: reachable.length, citations_unreachable: unreachable.length };
   } catch { return null; }
 }
 
@@ -274,12 +312,22 @@ async function writeBrief(question, sources) {
     findings: extracted.length ? [...extracted.slice(0, 2), contextLine] : [papers.length ? `${papers.length} scholarly records were retrieved. Begin with “${papers[0].title}”; assess study design, population, publication venue, and date before using it as evidence.` : 'No scholarly records were returned. Refine the terms or add a specialist literature source before drawing a research conclusion.', docs.length ? `${docs.length} matching private documents were found. They remain local to this deployment and should be compared with independent sources.` : 'No matching private documents were included in this run.', 'Use the linked evidence to distinguish discovery material from context, private material, and scholarly work.'],
     caveat: 'Retrieval is fallible and incomplete. Confirm authorship, date, methods, jurisdiction, and the original claim before publishing or making a decision.',
     synthesis: extracted.length ? 'extractive' : 'template',
+    takeaways: extracted.length ? extracted.slice(0, 5) : [],
+    faq: [],
     coverage: { total: sources.length, papers: byType('Paper'), web: byType('Web'), videos: byType('Video'), documents: byType('Document'), search_terms: tokens(question) },
     evidence_map: topEvidence,
     research_gaps: [papers.length < 3 ? 'The scholarly coverage is thin. Narrow the question, add field-specific terms, or review disciplinary databases.' : 'Scholarly records are available, but abstracts and methodology should be read before treating any result as conclusive.', docs.length ? 'Private documents were located; identify which claims need independent corroboration.' : 'No local context was included. Add internal notes, policies, or prior research when relevant.', 'This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.']
   };
-  const llm = await synthesizeBrief(question, sources);
+  const llm = (await synthesizeWithOpenRouter(question, sources)) || await synthesizeBrief(question, sources);
   return llm || fallback;
 }
 
-module.exports = { plan, reviewEvidence, writeBrief, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery };
+function briefToMarkdown(project) {
+  const brief = project.brief || {}; const sources = project.sources || [];
+  const line = items => (items || []).map((item, i) => typeof item === 'string' ? `${i + 1}. ${item}` : `${i + 1}. **${item.q}**\n   ${item.a}`).join('\n');
+  const evidence = (brief.evidence_map || []).map(s => `- [${s.title}](${s.url || ''}) — ${s.publisher || s.source_type}${s.published_at ? `, ${s.published_at}` : ''} (${s.reliability}${s.relevance ? `, ${s.relevance}% match` : ''})${s.open_access_url ? ` · [open access](${s.open_access_url})` : ''}\n  > ${(s.excerpt || '').slice(0, 280)}`).join('\n');
+  const all = sources.map(s => `- [${s.title}](${s.url || ''}) — ${s.publisher || s.source_type} (${s.source_type}, ${s.reliability})${s.open_access_url ? ` · [open access](${s.open_access_url})` : ''}`).join('\n');
+  return [`# ${project.question}`, ``, `*Fieldnote evidence brief · ${project.created_at || ''} · ${sources.length} sources · synthesis: ${brief.synthesis || 'template'}${brief.engine ? ` (${brief.engine})` : ''}*`, ``, `## Summary`, ``, brief.opening || '', ``, `## Key findings`, ``, line(brief.findings), ``, ...(brief.takeaways?.length ? [`## Key takeaways`, ``, line(brief.takeaways), ``] : []), `## Evidence`, ``, evidence || '_No evidence map._', ``, ...(brief.faq?.length ? [`## Study questions`, ``, line(brief.faq), ``] : []), `## Research gaps`, ``, line(brief.research_gaps), ``, `## All sources`, ``, all || '_None._', ``, `## Caveat`, ``, brief.caveat || '', ``].join('\n');
+}
+
+module.exports = { plan, reviewEvidence, writeBrief, briefToMarkdown, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery };

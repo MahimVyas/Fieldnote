@@ -99,6 +99,22 @@ test('evidence map preserves open-access URLs', async () => {
   assert.equal(brief.evidence_map[0].open_access_url, 'https://example.org/paper.pdf');
 });
 
+test('fallback brief carries takeaways and an empty faq', async () => {
+  delete process.env.FIELDNOTE_OPENROUTER_API_KEY;
+  const brief = await writeBrief('spaced repetition retention', [
+    { title: 'Spaced Repetition Study', source_type: 'Paper', reliability: 'scholarly', excerpt: 'Spaced repetition significantly improves long-term retention compared to massed practice in this study.' }
+  ]);
+  assert.ok(Array.isArray(brief.takeaways) && brief.takeaways.length > 0);
+  assert.deepEqual(brief.faq, []);
+});
+
+test('markdown export contains question, findings, sources, and gaps', async () => {
+  const { briefToMarkdown } = require('../agents');
+  const project = { question: 'Test question?', created_at: '2026-01-01', sources: [{ title: 'OA Paper', url: 'https://doi.org/10/e', publisher: 'X', source_type: 'Paper', reliability: 'scholarly', open_access_url: 'https://example.org/p.pdf' }], brief: { opening: 'Opening line.', synthesis: 'extractive', findings: ['Finding one.'], takeaways: ['Takeaway one.'], faq: [{ q: 'What?', a: 'This.' }], evidence_map: [{ title: 'OA Paper', url: 'https://doi.org/10/e', source_type: 'Paper', reliability: 'scholarly', relevance: 90, excerpt: 'Excerpt here.', open_access_url: 'https://example.org/p.pdf' }], research_gaps: ['Gap one.'], caveat: 'Be careful.' } };
+  const md = briefToMarkdown(project);
+  for (const needle of ['# Test question?', 'Opening line.', '## Key findings', 'Finding one.', '## Key takeaways', 'Takeaway one.', '## Study questions', 'What?', '## Research gaps', 'Gap one.', 'https://example.org/p.pdf', '## All sources', 'Be careful.']) assert.ok(md.includes(needle), `missing: ${needle}`);
+});
+
 test('document reader matches local files and ignores other extensions', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'fieldnote-docs-'));
   await fs.writeFile(path.join(dir, 'notes.md'), 'Independent education benefits from blended learning outcomes.');

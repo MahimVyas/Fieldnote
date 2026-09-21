@@ -37,8 +37,11 @@ no `npm install` required.
   reliability, and citation count before anything is presented.
 - **Traceable briefs** — every brief carries source excerpts, relevance
   signals, reliability labels, coverage metrics, an evidence map, and research
-  gaps. Optional LLM synthesis via local Ollama, with citation reachability
-  validation and a rule-based fallback when Ollama is offline.
+  gaps. Synthesis runs OpenRouter → local Ollama → extractive fallback, with
+  citation reachability validation on the AI paths. AI briefs add key
+  takeaways and self-test Q&A.
+- **Take it with you** — export any brief as Markdown or JSON, copy it to the
+  clipboard, or print it, straight from the results header.
 - **Async runs with live progress** — `POST /api/runs` returns `202`
   immediately; poll `GET /api/runs/:id` for per-agent status.
 - **Local-first library** — research is saved to `data/research.json` and can
@@ -114,6 +117,8 @@ Question → Planner → ┌─────────────┐
 | `FIELDNOTE_DOCUMENTS_PATH` | `documents/` | Directory scanned for `.md`/`.txt` files. |
 | `FIELDNOTE_SEARX_URL` | _(empty)_ | Base URL of a SearXNG instance for open-web results. |
 | `FIELDNOTE_OLLAMA_URL` | `http://localhost:11434` | Ollama server for LLM brief synthesis. Unreachable → template fallback. |
+| `FIELDNOTE_OPENROUTER_API_KEY` | _(empty)_ | OpenRouter key for cloud AI synthesis (takes priority). Keep in local `.env`, never committed. |
+| `FIELDNOTE_OPENROUTER_MODEL` | `openai/gpt-4o-mini` | Model used for OpenRouter synthesis and study aids. |
 | `NODE_ENV` | _(empty)_ | Set to `production` in the container. |
 
 Copy `.env.example` to `.env` for local customization. Private documents stay
@@ -127,6 +132,7 @@ on disk: the static file server refuses to serve `data/` and `documents/`.
 | `POST /api/runs` | Start a run: `{ question, sources, depth }` | `202` |
 | `GET /api/runs/:id` | Run status, per-agent progress, final result | `200` |
 | `GET /api/projects` | Saved research archive | `200` |
+| `GET /api/projects/:id/export?format=md` | Download brief as Markdown (`format=json` for JSON) | `200` |
 | `DELETE /api/projects/:id` | Delete a saved brief | `204` |
 
 Errors are JSON: `{ "error": "message" }`. `POST /api/runs` validates input
