@@ -319,6 +319,8 @@ function liftDock() {
   const gap = window.innerWidth <= 760 ? 28 : 16;
   const lift = Math.max(0, window.innerHeight - 12 - foot.getBoundingClientRect().top + gap);
   bar.style.transform = lift ? `translateY(${-lift}px)` : '';
+  const results = document.querySelector('.results');
+  if (results && bar.offsetHeight) results.style.paddingBottom = `${Math.ceil(bar.offsetHeight + 28)}px`;
 }
 let liftQueued = false;
 let lastScrollY = 0;
