@@ -146,6 +146,7 @@ nav{margin-left:0;gap:24px}
 .hero{margin:52px 16px 28px}
 .summary-lead{font-size:22px}
 .flow-group{grid-template-columns:1fr;width:100%}
+.search-card{left:0;right:0;bottom:0;bottom:env(safe-area-inset-bottom);margin:0;max-width:none;border-radius:20px 20px 0 0}
 .coverage-grid b{font-size:22px}
 }
 @media(max-width:460px){
@@ -160,7 +161,7 @@ nav{gap:12px}
 .library h1,.stack-hero h1{font-size:32px}
 .foot-note{display:none}
 .prompt-row{align-items:center;gap:8px}
-.search-card{border-width:10px;border-radius:22px}
+.search-card{border-width:10px;border-radius:20px 20px 0 0}
 .conversation-card{padding:4px 4px 4px 12px}
 .library{margin:48px 16px}
 }
