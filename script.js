@@ -255,7 +255,15 @@ function liftDock() {
   bar.style.transform = lift ? `translateY(${-lift}px)` : '';
 }
 let liftQueued = false;
-function queueLift() { if (liftQueued) return; liftQueued = true; requestAnimationFrame(() => { liftQueued = false; liftDock(); }); }
+let lastScrollY = 0;
+function updateHeaderVisibility() {
+  const y = window.scrollY || document.documentElement.scrollTop || 0;
+  const menuOpen = document.body.classList.contains('nav-open');
+  if (!menuOpen && y > 140 && y > lastScrollY + 4) document.body.classList.add('nav-hidden');
+  else if (y < lastScrollY - 4 || y <= 140) document.body.classList.remove('nav-hidden');
+  lastScrollY = y;
+}
+function queueLift() { if (liftQueued) return; liftQueued = true; requestAnimationFrame(() => { liftQueued = false; liftDock(); updateHeaderVisibility(); }); }
 window.addEventListener('scroll', queueLift, { passive: true });
 window.addEventListener('resize', queueLift);
 window.addEventListener('load', queueLift);

@@ -164,6 +164,8 @@ body.nav-open nav{display:flex;animation:menu-in .18s ease}
 .nav-link.active{color:var(--orange)}
 [data-theme="dark"] nav{box-shadow:0 18px 30px rgba(0,0,0,.45)}
 }
+header{transition:transform .3s cubic-bezier(.2,.8,.2,1),background-color .25s ease}
+body.nav-hidden header{transform:translateY(-100%)}
 @keyframes menu-in{from{opacity:0;transform:translateY(-6px)}}
 @media(max-width:460px){
 header{padding:0 12px;gap:8px}
