@@ -112,6 +112,7 @@ function renderProject(project) {
   if (project.errors?.length) toast(`Partial result: ${project.errors[0]}`);
   document.body.classList.remove('working'); document.body.classList.add('has-results');
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  queueLift();
 }
 
 function updateDockMeta() {
@@ -169,6 +170,18 @@ $('#prompt').addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); $('#runResearch').click(); }
 });
 if (window.matchMedia('(pointer:fine)').matches) $('#prompt').focus({ preventScroll: true });
+function liftDock() {
+  const bar = document.querySelector('.search-card'); const foot = document.querySelector('footer');
+  if (!bar || !foot) return;
+  const lift = Math.max(0, window.innerHeight - 12 - foot.getBoundingClientRect().top);
+  bar.style.transform = lift ? `translateY(${-lift}px)` : '';
+}
+let liftQueued = false;
+function queueLift() { if (liftQueued) return; liftQueued = true; requestAnimationFrame(() => { liftQueued = false; liftDock(); }); }
+window.addEventListener('scroll', queueLift, { passive: true });
+window.addEventListener('resize', queueLift);
+window.addEventListener('load', queueLift);
+queueLift();
 
 async function refreshLibraryCount() {
   try {
