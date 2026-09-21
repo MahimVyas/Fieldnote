@@ -51,7 +51,10 @@ no `npm install` required.
   with version, graceful shutdown, non-root Docker image with `HEALTHCHECK`.
 - **Polished UI** — dark mode with system-preference detection, responsive
   layout, keyboard-accessible controls, reduced-motion support, printable
-  briefs, and a live service-status footer.
+  briefs, and a live service-status footer. While a run is in flight the page
+  enters a quiet working mode: hero and agent cards collapse into a sticky
+  status strip, the prompt docks to the bottom for follow-ups, and only
+  progress plus results stay on screen. `⌘↵` starts a run.
 
 ## Quickstart
 

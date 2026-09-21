@@ -25,6 +25,8 @@ function setResultProgress(percent, label, step) {
   $('#loadingFill').style.width = `${visibleProgress}%`;
   $('#loadingPercent').textContent = `${visibleProgress}%`;
   $('#loadingLabel').textContent = label;
+  const stripText = $('#stripText'); if (stripText) stripText.textContent = label;
+  const stripFill = $('#stripFill'); if (stripFill) stripFill.style.width = `${visibleProgress}%`;
   document.querySelectorAll('.loading-steps span').forEach(item => item.classList.toggle('active', item.dataset.step === step));
 }
 function showResultLoading() {
@@ -51,7 +53,7 @@ document.querySelectorAll('.nav-link').forEach(button => button.addEventListener
   if (button.dataset.view === 'library') loadLibrary();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }));
-document.querySelectorAll('.source-toggle').forEach(label => label.addEventListener('click', () => setTimeout(() => label.classList.toggle('checked', label.querySelector('input').checked))));
+document.querySelectorAll('.source-toggle').forEach(label => label.addEventListener('click', () => setTimeout(() => { label.classList.toggle('checked', label.querySelector('input').checked); updateDockMeta(); })));
 
 function setRunning(running) {
   const button = $('#runResearch'); button.disabled = running;
@@ -82,7 +84,7 @@ function sourceHtml(source) {
 }
 function updateAgents(agents) {
   const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'], 'document-reader': ['#docCount', '.agent-card:nth-child(4)'] };
-  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
+  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); const dot = document.querySelector(`[data-strip="${agent.name}"]`); if (dot) dot.className = agent.status; });
 }
 let currentProject = null;
 function renderProject(project) {
@@ -101,12 +103,20 @@ function renderProject(project) {
   document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div>${(project.brief.takeaways?.length || project.brief.faq?.length) ? `<div class="study-block"><div><h4>Key takeaways</h4>${(project.brief.takeaways || []).map(t => `<p>${escapeHtml(t)}</p>`).join('') || '<p>No takeaways extracted.</p>'}</div><div><h4>Self-test questions</h4>${(project.brief.faq || []).map(f => `<details><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`).join('') || '<p>Enable AI synthesis for generated study questions.</p>'}</div></div>` : ''}<div class="evidence-map"><div><h4>Most relevant evidence</h4>${evidence.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`).join('')}</div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map((gap, index) => `<p>${escapeHtml(gap)}<button class="gap-dig" data-gap="${index}">Dig deeper <span>→</span></button></p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
   document.querySelectorAll('.gap-dig').forEach(button => button.addEventListener('click', () => digDeeper(Number(button.dataset.gap))));
   if (project.errors?.length) toast(`Partial result: ${project.errors[0]}`);
+  document.body.classList.remove('working'); document.body.classList.add('has-results');
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function updateDockMeta() {
+  const el = $('#dockMeta'); if (!el) return;
+  const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
+  el.innerHTML = `${escapeHtml(sources.join(' · ') || 'No sources')} · ${escapeHtml(depth)} <span>edit ⌄</span>`;
+}
 async function startRun(question, sources) {
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
   if (!navigator.onLine) return toast('You appear to be offline. Web and paper sources need a connection.');
+  updateDockMeta();
+  document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     showResultLoading();
@@ -114,7 +124,7 @@ async function startRun(question, sources) {
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
     while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 700)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
     updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); toast('Evidence brief saved to your library.');
-  } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; toast(error.message); }
+  } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
   finally { setRunning(false); }
 }
 
@@ -132,7 +142,7 @@ $('#runResearch').addEventListener('click', async () => {
   const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
   startRun(question, sources);
 });
-$('#newResearch').addEventListener('click', () => { $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
+$('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
 $('#openBrief').addEventListener('click', () => $('#results').scrollIntoView({ behavior: 'smooth' }));
 function exportUrl(format) { return currentProject ? `/api/projects/${currentProject.id}/export?format=${format}` : null; }
@@ -146,7 +156,12 @@ $('#expCopy').addEventListener('click', async () => {
     await navigator.clipboard.writeText(await response.text()); toast('Brief copied to clipboard.');
   } catch { toast('Could not copy. Try the Markdown download instead.'); }
 });
-$('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>⌄</b>`; toast(`Research depth set to ${depth}.`); });
+$('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>⌄</b>`; updateDockMeta(); toast(`Research depth set to ${depth}.`); });
+$('#dockMeta').addEventListener('click', () => document.body.classList.toggle('dock-expanded'));
+$('#prompt').addEventListener('keydown', event => {
+  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); $('#runResearch').click(); }
+});
+if (window.matchMedia('(pointer:fine)').matches) $('#prompt').focus({ preventScroll: true });
 
 async function refreshLibraryCount() {
   try {

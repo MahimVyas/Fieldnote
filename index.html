@@ -43,8 +43,9 @@
       <div class="prompt-row">
         <span class="prompt-icon">✦</span>
         <textarea id="prompt" rows="2" placeholder="What would you like to understand?">How is AI changing the future of independent education?</textarea>
-        <button class="run-button" id="runResearch">Research <span>↗</span></button>
+        <button class="run-button" id="runResearch" title="Start research (⌘↵)">Research <span>↗</span></button>
       </div>
+      <button class="dock-meta" id="dockMeta" aria-label="Edit research sources and depth"></button>
       <div class="research-options">
         <span class="option-label">LOOK IN</span>
         <label class="source-toggle checked"><input type="checkbox" checked data-source="Web"><span></span> Web</label>
@@ -56,6 +57,7 @@
     </section>
 
     <section class="workspace" id="workspace">
+      <div class="work-strip" id="workStrip" aria-live="polite"><span class="strip-dots"><i data-strip="web-scout" title="Web scout"></i><i data-strip="video-listener" title="Video listener"></i><i data-strip="paper-trail" title="Paper trail"></i><i data-strip="document-reader" title="Document reader"></i></span><span id="stripText">Preparing…</span><div class="strip-bar"><i id="stripFill"></i></div></div>
       <div class="workspace-head">
         <div><div class="eyebrow"><i></i> LIVE RESEARCH</div><h2>Your research team is at work</h2></div>
         <div class="status"><span></span> <b id="statusText">4 agents exploring</b> <small>· started just now</small></div>
