@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fieldnote — research, assembled</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <header>
+    <a class="brand" href="#"><span class="brand-mark">f</span><span>fieldnote</span></a>
+    <nav aria-label="Main navigation">
+      <button class="nav-link active" data-view="research">Research</button>
+      <button class="nav-link" data-view="library">Library <span class="count">12</span></button>
+      <button class="nav-link" data-view="stack">Tech stack</button>
+    </nav>
+    <button class="new-button" id="newResearch"><span>+</span> New research</button>
+  </header>
+
+  <main id="researchView">
+    <section class="hero">
+      <div class="eyebrow"><i></i> OPEN RESEARCH WORKBENCH</div>
+      <h1>Start with a question.<br><em>Leave with the whole picture.</em></h1>
+      <p class="intro">Fieldnote sends a small team of focused agents across the web, YouTube, papers, and your files—then brings the evidence back into one readable brief.</p>
+    </section>
+
+    <section class="search-card" aria-label="Research prompt">
+      <div class="prompt-row">
+        <span class="prompt-icon">✦</span>
+        <textarea id="prompt" rows="2" placeholder="What would you like to understand?">How is AI changing the future of independent education?</textarea>
+        <button class="run-button" id="runResearch">Research <span>↗</span></button>
+      </div>
+      <div class="research-options">
+        <span class="option-label">LOOK IN</span>
+        <label class="source-toggle checked"><input type="checkbox" checked data-source="Web"><span></span> Web</label>
+        <label class="source-toggle checked"><input type="checkbox" checked data-source="YouTube"><span></span> YouTube</label>
+        <label class="source-toggle checked"><input type="checkbox" checked data-source="Papers"><span></span> Papers</label>
+        <label class="source-toggle"><input type="checkbox" data-source="Documents"><span></span> My documents</label>
+        <div class="depth-select"><span>Depth</span><button id="depthButton">Thorough <b>⌄</b></button></div>
+      </div>
+    </section>
+
+    <section class="workspace" id="workspace">
+      <div class="workspace-head">
+        <div><div class="eyebrow"><i></i> LIVE RESEARCH</div><h2>Your research team is at work</h2></div>
+        <div class="status"><span></span> <b id="statusText">4 agents exploring</b> <small>· started just now</small></div>
+      </div>
+      <div class="agent-grid">
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web">⌘</span><span class="agent-state">SEARCHING</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:72%"></i></div><small id="webCount">18 sources found</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video">▶</span><span class="agent-state">WATCHING</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:48%"></i></div><small id="videoCount">6 videos queued</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper">⌁</span><span class="agent-state">READING</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:88%"></i></div><small id="paperCount">9 papers indexed</small></article>
+        <article class="agent-card"><div class="agent-top"><span class="agent-dot doc">▤</span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span>→</span></button></article>
+      </div>
+    </section>
+
+    <section class="results" id="results">
+      <div class="results-loading" id="resultsLoading" hidden aria-live="polite">
+        <div class="loading-topline"><span class="loading-orbit"><i></i></span><span id="loadingLabel">Preparing your research plan</span><b id="loadingPercent">08%</b></div>
+        <div class="loading-track"><i id="loadingFill"></i></div>
+        <div class="loading-steps"><span class="active" data-step="plan">Plan</span><span data-step="gather">Gather evidence</span><span data-step="review">Review sources</span><span data-step="brief">Build brief</span></div>
+      </div>
+      <div class="results-head"><div><div class="eyebrow"><i></i> EVIDENCE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><button class="outline-button" id="openBrief">View brief <span>↗</span></button></div>
+      <div class="finding-layout">
+        <article class="summary-card"><p class="summary-lead">AI is making high-quality learning more <mark>personal, accessible, and self-directed</mark>—while putting a premium on human guidance and trusted communities.</p><div class="takeaway"><span>01</span><p>Independent educators are using AI to serve smaller niches with curriculum previously only possible at scale.</p></div><div class="takeaway"><span>02</span><p>Evidence suggests the strongest outcomes come from blended, rather than autonomous, learning.</p></div></article>
+        <div class="sources-panel"><div class="panel-title"><span>Evidence collected</span><b>33 sources</b></div><a href="#" class="source"><span class="source-type web-type">WEB</span><div><b>The emerging AI education ecosystem</b><small>MIT Technology Review · 8 min read</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type video-type">VIDEO</span><div><b>What AI tutors get right (and wrong)</b><small>YouTube · Transcript available · 24:18</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type paper-type">PAPER</span><div><b>Generative AI and learning outcomes</b><small>Stanford HAI · 2025</small></div><em>↗</em></a><button class="all-sources">View all sources <span>→</span></button></div>
+      </div>
+    </section>
+  </main>
+
+  <main id="stackView" hidden>
+    <section class="stack-hero"><div class="eyebrow"><i></i> NO PAYWALL REQUIRED</div><h1>Built to be yours.<br><em>Built with open tools.</em></h1><p>Every layer of Fieldnote can run locally or on free tiers. Use hosted services when convenient, swap them out when you're ready.</p></section>
+    <section class="stack-grid">
+      <article><span>01</span><h3>Research agents</h3><p>LangGraph coordinates specialized agents with Ollama running local open-weight models like Llama 3.1 or Qwen.</p><code>LangGraph · Ollama · Qwen</code></article>
+      <article><span>02</span><h3>Web & paper search</h3><p>SearXNG searches the open web privately. arXiv, Crossref, and Semantic Scholar provide free scholarly metadata.</p><code>SearXNG · arXiv · Crossref</code></article>
+      <article><span>03</span><h3>YouTube intelligence</h3><p>yt-dlp discovers videos and youtube-transcript-api retrieves captions where creators make them available.</p><code>yt-dlp · transcript-api</code></article>
+      <article><span>04</span><h3>Your documents</h3><p>Apache Tika extracts text from local files. Chroma stores searchable embeddings on your own machine.</p><code>Tika · Chroma · SQLite</code></article>
+      <article><span>05</span><h3>Interface</h3><p>A simple Next.js interface, deployed for free on Cloudflare Pages or run entirely on localhost.</p><code>Next.js · Tailwind · Cloudflare</code></article>
+      <article class="stack-note"><span>THE PRINCIPLE</span><h3>Free means portable.</h3><p>No required API keys. No source data is sold. The workflow stays useful even completely offline once your local library is indexed.</p></article>
+    </section>
+    <section class="architecture"><div><div class="eyebrow"><i></i> HOW IT CONNECTS</div><h2>One question,<br>many careful readers.</h2></div><div class="flow"><div>Prompt</div><i>→</i><div>Planner agent</div><i>→</i><div class="flow-group"><span>Web scout</span><span>Video listener</span><span>Paper trail</span><span>Document reader</span></div><i>→</i><div>Evidence brief</div></div></section>
+  </main>
+
+  <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1>Research that stays<br><em>useful later.</em></h1><div class="library-list"><div><b>How is AI changing the future of independent education?</b><span>33 sources · Today</span></div><div><b>Community-owned social networks</b><span>18 sources · Sep 18</span></div><div><b>The next generation of urban mobility</b><span>42 sources · Sep 12</span></div></div></section></main>
+
+  <div class="toast" id="toast"></div>
+  <script src="script.js"></script>
+</body>
+</html>
