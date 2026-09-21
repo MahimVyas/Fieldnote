@@ -114,6 +114,8 @@ body.working .hero{display:none}
 body.working .workspace-head,body.working .agent-grid{display:none}
 
 body.working .finding-layout,body.working .report-details{display:none}
+body.working #conversations,body.working #workspace,body.working .results-head{display:none}
+body.working #prompt{opacity:.8}
 
 .results-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .export-row{display:flex;gap:6px;flex-wrap:wrap}

@@ -297,6 +297,10 @@ function updateDockMeta() {
   const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
   el.innerHTML = `${escapeHtml(sources.join(' · ') || 'No sources')} · ${escapeHtml(depth)} <span>edit ⌄</span>`;
 }
+function lockPrompt(locked) {
+  ['#prompt', '#depthButton', '#micButton', '#dockMeta'].forEach(s => { const el = $(s); if (el) el.disabled = locked; });
+  document.querySelectorAll('.source-toggle input').forEach(input => { input.disabled = locked; });
+}
 async function startRun(question, sources) {
   if (DEMO) return toast(DEMO_MESSAGE);
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
@@ -308,6 +312,7 @@ async function startRun(question, sources) {
   document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
   runActive = true; cancelRequested = false; activeRunId = null;
   runStartedAt = Date.now();
+  lockPrompt(true);
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     showResultLoading();
@@ -325,7 +330,7 @@ async function startRun(question, sources) {
     }
     updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
-  finally { runActive = false; activeRunId = null; setRunning(false); }
+  finally { runActive = false; activeRunId = null; lockPrompt(false); setRunning(false); }
 }
 
 function projectSources(project) {
