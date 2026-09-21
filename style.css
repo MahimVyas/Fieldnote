@@ -116,12 +116,12 @@ body.working .finding-layout,body.working .report-details{display:none}
 .library-list .library-item.deleting{opacity:0;transform:translateX(48px)}
 .lib-index{font:11px 'DM Mono';color:var(--orange);flex:none;width:28px;padding-top:2px}
 .library-item>button[data-open] b{font-size:16px;line-height:1.4}
-.lib-go{flex:none;width:8px;height:8px;margin:0 10px 0 2px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg)}
+.library-item>button[data-open]{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;transition:border-color .18s ease,transform .18s ease}
+.library-item>button[data-open]:hover{border-color:var(--orange)}
+.library-item>button[data-open]:active{transform:scale(.99)}
 @media(max-width:760px){
 .library-list .library-item{flex-direction:row;align-items:center;gap:8px}
-.library-item>button[data-open]{padding:16px 0}
-.lib-index{width:24px}
-.lib-go{margin-right:8px}
+.library-item>button[data-open]{padding:12px 14px}
 .library-toolbar .mini-button{flex:1;justify-content:center;padding:13px}
 }
 .study-block{display:grid;grid-template-columns:1fr 1fr;gap:52px;margin:25px 0}
