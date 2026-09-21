@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#f5f1e8" id="themeColor" />
+  <script>try{var t=localStorage.getItem('fieldnote-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}</script>
 </head>
 <body>
   <div class="noise"></div>
@@ -18,7 +20,10 @@
       <button class="nav-link" data-view="library">Library <span class="count">12</span></button>
       <button class="nav-link" data-view="stack">Tech stack</button>
     </nav>
-    <button class="new-button" id="newResearch"><span>+</span> New research</button>
+    <div class="header-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-icon">☾</span></button>
+      <button class="new-button" id="newResearch"><span>+</span> New research</button>
+    </div>
   </header>
 
   <main id="researchView">

@@ -12,8 +12,8 @@ test('evidence reviewer removes duplicate URLs and ranks scholarly work first', 
   assert.equal(sources[0].title, 'Paper');
 });
 
-test('brief remains traceable and caveated', () => {
-  const brief = writeBrief('test question', [{ title: 'Paper', source_type: 'Paper', reliability: 'scholarly' }]);
+test('brief remains traceable and caveated', async () => {
+  const brief = await writeBrief('test question', [{ title: 'Paper', source_type: 'Paper', reliability: 'scholarly' }]);
   assert.match(brief.opening, /reviewed sources/);
   assert.match(brief.caveat, /Confirm authorship/);
 });

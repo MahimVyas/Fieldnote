@@ -1,5 +1,22 @@
 const $ = (s) => document.querySelector(s);
 const toast = (message) => { const el = $('#toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3200); };
+
+function paintTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark';
+  const toggle = $('#themeToggle');
+  toggle.setAttribute('aria-pressed', String(dark));
+  toggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  toggle.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
+  const meta = $('#themeColor');
+  if (meta) meta.content = dark ? '#161513' : '#f5f1e8';
+}
+$('#themeToggle').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('fieldnote-theme', next); } catch {}
+  paintTheme(next);
+});
+paintTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 let depth = 'Thorough';
 let visibleProgress = 8;
 

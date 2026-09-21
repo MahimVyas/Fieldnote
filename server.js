@@ -28,7 +28,7 @@ async function executeRun(run) {
   });
   const sources = reviewEvidence((await Promise.all(jobs)).flat());
   if (!sources.length) { run.status = 'failed'; run.error = 'No sources could be retrieved. Check your connection or revise the question.'; run.completed_at = new Date().toISOString(); return; }
-  const project = { id: run.id, question: run.question, depth: run.depth, sources, brief: writeBrief(run.question, sources), agents: run.agents, errors: run.agents.filter(agent => agent.status === 'failed').map(agent => `${agent.name}: ${agent.error}`), created_at: run.started_at };
+  const project = { id: run.id, question: run.question, depth: run.depth, sources, brief: await writeBrief(run.question, sources), agents: run.agents, errors: run.agents.filter(agent => agent.status === 'failed').map(agent => `${agent.name}: ${agent.error}`), created_at: run.started_at };
   const projects = await readProjects(); projects.unshift(project); await writeProjects(projects.slice(0, config.maxSavedProjects)); run.result = project; run.status = 'completed'; run.completed_at = new Date().toISOString();
 }
 async function createRun(input) {
