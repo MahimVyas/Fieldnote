@@ -151,7 +151,7 @@ $('#runResearch').addEventListener('click', async () => {
 });
 $('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
-$('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.finding-layout'); if (summary) summary.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.summary-card'); if (!summary) return; summary.scrollIntoView({ behavior: 'smooth', block: 'center' }); summary.classList.remove('flash'); void summary.offsetWidth; summary.classList.add('flash'); setTimeout(() => summary.classList.remove('flash'), 1300); });
 function exportUrl(format) { return currentProject ? `/api/projects/${currentProject.id}/export?format=${format}` : null; }
 $('#expMd').addEventListener('click', () => { const url = exportUrl('md'); if (url) window.location.href = url; else toast('Run a research question first.'); });
 $('#expJson').addEventListener('click', () => { const url = exportUrl('json'); if (url) window.location.href = url; else toast('Run a research question first.'); });
