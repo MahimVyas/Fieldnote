@@ -14,39 +14,48 @@ function loadFrontend() {
     _store: store
   };
   const makeEl = () => ({
-    dataset: {}, style: {},
+    dataset: {}, style: {}, value: '', hidden: false, disabled: false,
+    textContent: '', innerHTML: '',
     setAttribute() {}, addEventListener() {}, focus() {}, click() {}, remove() {}, appendChild() {},
     querySelector: () => makeEl(), querySelectorAll: () => [], scrollIntoView() {},
+    insertAdjacentHTML() {}, getBoundingClientRect: () => ({ top: 9999 }),
     classList: { add() {}, remove() {}, toggle() {} }
   });
+  const registry = new Map();
+  const querySelector = s => { if (!registry.has(s)) registry.set(s, makeEl()); return registry.get(s); };
+  const bodyClasses = [];
+  const bodyEl = makeEl();
+  bodyEl.classList = { add: c => bodyClasses.push(c), remove: c => { const i = bodyClasses.indexOf(c); if (i >= 0) bodyClasses.splice(i, 1); }, toggle() {} };
   const sandbox = {
     console,
     location: { hostname: 'localhost', protocol: 'http:' },
-    navigator: {},
+    navigator: { onLine: true },
     localStorage,
     fetch: async () => ({ ok: false }),
     requestAnimationFrame: () => 0,
-    setTimeout: () => 0,
+    setTimeout: fn => { if (typeof fn === 'function') fn(); return 0; },
     clearTimeout: () => {},
     Blob,
     URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} },
     window: null,
     document: {
       documentElement: makeEl(),
-      body: makeEl(),
-      querySelector: () => makeEl(),
-      querySelectorAll: () => [],
+      body: bodyEl,
+      querySelector, querySelectorAll: () => [],
       createElement: tag => {
-        const el = makeEl(); el.tagName = tag; created.push(el); return el;
+        const el = makeEl(); el.tagName = tag; let text = '';
+        Object.defineProperty(el, 'textContent', { get: () => text, set: v => { text = String(v); } });
+        Object.defineProperty(el, 'innerHTML', { get: () => text, set: v => { text = String(v); } });
+        created.push(el); return el;
       },
       addEventListener() {}
     }
   };
-  sandbox.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, scrollTo() {} };
+  sandbox.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, scrollTo() {}, innerHeight: 800 };
   sandbox.globalThis = sandbox;
   const context = vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8'), context, { filename: 'script.js' });
-  return { sandbox, store, created };
+  return { sandbox, store, created, registry, bodyClasses };
 }
 
 const project = id => ({
@@ -112,4 +121,26 @@ test('client download creates a named blob anchor', () => {
   assert.ok(anchor);
   assert.equal(anchor.download, 'brief.md');
   assert.equal(anchor.href, 'blob:test');
+});
+
+test('full run flow renders, caches, and toasts', async () => {
+  const { sandbox, registry, bodyClasses } = loadFrontend();
+  const result = { id: 'run-1', question: 'Flow question?', depth: 'Thorough', created_at: '2026-01-01',
+    sources: [{ title: 'Flow Source', url: 'https://example.com/f', publisher: 'Flow Press', source_type: 'Web', reliability: 'context', relevance: { score: 80, terms: [] }, excerpt: 'A real excerpt about testing the full flow end to end in this harness.' }],
+    brief: { opening: 'Flow opening.', synthesis: 'extractive', findings: ['Flow finding.'], takeaways: [], faq: [], coverage: { total: 1, papers: 0, web: 1, videos: 0, documents: 0, search_terms: [] }, evidence_map: [], research_gaps: ['Flow gap.'], caveat: 'Flow caveat.' },
+    agents: [{ name: 'web-scout', source: 'Web', status: 'completed', sources_found: 1, started_at: '', completed_at: '' }], errors: [] };
+  const running = { id: 'run-1', question: 'Flow question?', depth: 'Thorough', status: 'running', started_at: '', agents: [{ name: 'web-scout', source: 'Web', status: 'running', sources_found: 0 }] };
+  const done = { ...running, status: 'completed', completed_at: '', agents: result.agents, result };
+  let polls = 0;
+  sandbox.fetch = async (url, opts) => {
+    if (url === '/api/projects') return { ok: true, json: async () => [] };
+    if (opts && opts.method === 'POST') return { ok: true, json: async () => running };
+    if (typeof url === 'string' && url.startsWith('/api/runs/')) { polls++; return { ok: true, json: async () => (polls >= 2 ? done : running) }; }
+    return { ok: false };
+  };
+  await vm.runInContext(`startRun('Flow question?', ['Web'])`, sandbox);
+  assert.ok(bodyClasses.includes('has-results'));
+  assert.ok(registry.get('.summary-card').innerHTML.includes('Flow opening.'));
+  assert.ok(registry.get('#toast').textContent.includes('saved to your library'));
+  assert.deepEqual([...vm.runInContext(`readCache()`, sandbox).map(p => p.id)], ['run-1']);
 });

@@ -19,6 +19,10 @@ const startedAt = Date.now();
 const config = Object.freeze({ port: Number(process.env.PORT || 3000), dataPath: process.env.FIELDNOTE_DATA_PATH || path.join(root, 'data', 'research.json'), documentsPath: process.env.FIELDNOTE_DOCUMENTS_PATH || path.join(root, 'documents'), maxQuestionLength: 1000, maxSavedProjects: 500, rateWindowMs: 60_000, rateLimit: 20 });
 const runs = new Map(); const rateBuckets = new Map();
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8' };
+/* Only these files are ever served. Everything else (server.js, agents.js,
+   package.json, .env, data/, documents/) returns 404. WHATWG URLs normalize
+   dot segments before we see them, so a blocklist cannot protect us. */
+const publicFiles = new Set(['index.html', 'script.js', 'style.css', 'favicon.svg', 'robots.txt', 'sitemap.xml']);
 const csp = "default-src 'self'; base-uri 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'";
 
 function log(status, req, started, requestId, error) {
@@ -78,9 +82,9 @@ const server = http.createServer(async (req, res) => {
       return send(res, req, started, requestId, 200, body, isJson ? 'application/json; charset=utf-8' : 'text/markdown; charset=utf-8', { 'Content-Disposition': `attachment; filename="${filename}"` });
     }
     if (req.method !== 'GET') return send(res, req, started, requestId, 405, { error: 'Method not allowed.' });
-    const file = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, ''); const target = path.resolve(root, file);
-    if (!target.startsWith(root + path.sep) || target.includes(`${path.sep}data${path.sep}`) || target.includes(`${path.sep}documents${path.sep}`)) return send(res, req, started, requestId, 403, { error: 'Forbidden.' });
-    return send(res, req, started, requestId, 200, await fs.readFile(target), types[path.extname(target)] || 'application/octet-stream');
+    const file = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    if (!publicFiles.has(file)) return send(res, req, started, requestId, 404, { error: 'Not found.' });
+    return send(res, req, started, requestId, 200, await fs.readFile(path.join(root, file)), types[path.extname(file)] || 'application/octet-stream');
   } catch (error) { const status = error.code === 'ENOENT' ? 404 : 400; const message = error.code === 'ENOENT' ? 'Not found.' : (error.message || 'Unexpected server error.'); return send(res, req, started, requestId, status, { error: message }); }
 });
 server.listen(config.port, () => console.log(`Fieldnote v${version} is running at http://localhost:${config.port}`));
