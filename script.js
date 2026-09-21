@@ -85,6 +85,30 @@ $('#themeToggle').addEventListener('click', () => {
 paintTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 let depth = 'Thorough';
 let visibleProgress = 8;
+let runStartedAtClient = 0;
+let elapsedTimer = 0;
+
+function fmtTime(s) { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+function expectedDuration() {
+  try {
+    const history = JSON.parse(localStorage.getItem('fieldnote.durations') || '[]');
+    if (history.length) return history.reduce((a, b) => a + b, 0) / history.length / 1000;
+  } catch {}
+  return depth === 'Quick' ? 20 : 45;
+}
+function recordDuration() {
+  try {
+    const history = JSON.parse(localStorage.getItem('fieldnote.durations') || '[]');
+    history.unshift(Date.now() - runStartedAtClient);
+    localStorage.setItem('fieldnote.durations', JSON.stringify(history.slice(0, 10)));
+  } catch {}
+}
+function updateElapsed() {
+  const el = $('#loadingElapsed'); if (!el || !runActive) return;
+  const elapsed = (Date.now() - runStartedAtClient) / 1000;
+  const remaining = expectedDuration() - elapsed;
+  el.textContent = remaining > 1 ? `${fmtTime(elapsed)} elapsed · ≈${fmtTime(remaining)} left` : `${fmtTime(elapsed)} elapsed · finishing up`;
+}
 
 function setResultProgress(percent, label, step) {
   visibleProgress = Math.max(visibleProgress, Math.min(100, Math.round(percent)));
@@ -103,6 +127,9 @@ function showResultLoading() {
 function syncResultProgress(run) {
   const complete = run.agents.filter(agent => agent.status === 'completed' || agent.status === 'failed').length;
   const running = run.agents.filter(agent => agent.status === 'running').length;
+  const found = run.agents.reduce((n, agent) => n + (agent.sources_found || 0), 0);
+  const agentsEl = $('#loadingAgents'); if (agentsEl) agentsEl.textContent = `${running} of ${run.agents.length} agents working`;
+  const sourcesEl = $('#loadingSources'); if (sourcesEl) sourcesEl.textContent = `${found} sources found so far`;
   const gatherProgress = 18 + ((complete + (running * .48)) / Math.max(run.agents.length, 1)) * 58;
   if (complete < run.agents.length) return setResultProgress(gatherProgress, `${complete} of ${run.agents.length} specialist agents have reported back`, 'gather');
   setResultProgress(82, 'Evidence reviewer is ranking and deduplicating sources', 'review');
@@ -312,7 +339,9 @@ async function startRun(question, sources) {
   document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
   queueLift(); requestAnimationFrame(queueLift); setTimeout(queueLift, 650);
   runActive = true; cancelRequested = false; activeRunId = null;
-  runStartedAt = Date.now();
+  runStartedAt = Date.now(); runStartedAtClient = Date.now();
+  clearInterval(elapsedTimer); updateElapsed();
+  elapsedTimer = setInterval(updateElapsed, 1000);
   lockPrompt(true);
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
@@ -329,9 +358,9 @@ async function startRun(question, sources) {
       finishResultLoading(false); $('#statusText').textContent = 'Run cancelled'; document.body.classList.remove('working'); toast('Run cancelled.');
       return;
     }
-    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
+    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); recordDuration(); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
-  finally { runActive = false; activeRunId = null; lockPrompt(false); setRunning(false); }
+  finally { runActive = false; activeRunId = null; clearInterval(elapsedTimer); lockPrompt(false); setRunning(false); }
 }
 
 function projectSources(project) {

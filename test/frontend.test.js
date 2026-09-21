@@ -33,6 +33,8 @@ function loadFrontend() {
     localStorage,
     fetch: async () => ({ ok: false }),
     requestAnimationFrame: () => 0,
+    setInterval: () => 0,
+    clearInterval: () => {},
     setTimeout: fn => { if (typeof fn === 'function') fn(); return 0; },
     clearTimeout: () => {},
     Blob,
@@ -225,4 +227,23 @@ test('unreadable server replies produce a human toast', async () => {
     vm.runInContext(`readJsonSafe({ json: async () => { throw new SyntaxError("Unexpected token '<'"); } })`, sandbox),
     /unreadably/
   );
+});
+
+test('loader clock formats time and learns ETA from history', () => {
+  const { sandbox, registry } = loadFrontend();
+  assert.equal(vm.runInContext(`fmtTime(0)`, sandbox), '0:00');
+  assert.equal(vm.runInContext(`fmtTime(75)`, sandbox), '1:15');
+  assert.equal(vm.runInContext(`expectedDuration()`, sandbox), 45);
+  vm.runInContext(`localStorage.setItem('fieldnote.durations', JSON.stringify([20000, 40000]))`, sandbox);
+  assert.equal(vm.runInContext(`expectedDuration()`, sandbox), 30);
+});
+
+test('loader meta shows agents working and sources so far', () => {
+  const { sandbox, registry } = loadFrontend();
+  vm.runInContext(`syncResultProgress({ agents: [
+    { name: 'web-scout', status: 'running', sources_found: 3 },
+    { name: 'paper-trail', status: 'completed', sources_found: 7 }
+  ] })`, sandbox);
+  assert.equal(registry.get('#loadingAgents').textContent, '1 of 2 agents working');
+  assert.equal(registry.get('#loadingSources').textContent, '10 sources found so far');
 });
