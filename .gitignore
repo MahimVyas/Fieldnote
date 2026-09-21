@@ -24,6 +24,9 @@ pnpm-debug.log*
 # Data directory
 data/
 
+# Local experiments and scratch work (never committed)
+research-website/
+
 # IDE
 .vscode/
 .idea/
