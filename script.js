@@ -1,5 +1,9 @@
 const $ = (s) => document.querySelector(s);
-const toast = (message) => { const el = $('#toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3200); };
+let toastTimer = 0;
+const toast = (message) => { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200); };
+const promptEl = $('#prompt');
+function autogrow() { promptEl.style.height = 'auto'; promptEl.style.height = Math.min(promptEl.scrollHeight, 160) + 'px'; }
+promptEl.addEventListener('input', autogrow); autogrow();
 
 function paintTheme(theme) {
   document.documentElement.dataset.theme = theme;
@@ -47,11 +51,13 @@ function finishResultLoading(success) {
 }
 
 document.querySelectorAll('.nav-link').forEach(button => button.addEventListener('click', () => {
-  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-  button.classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(b => { b.classList.remove('active'); b.removeAttribute('aria-current'); });
+  button.classList.add('active'); button.setAttribute('aria-current', 'page');
   ['research', 'stack', 'library'].forEach(view => $('#'+view+'View').hidden = button.dataset.view !== view);
   if (button.dataset.view === 'library') loadLibrary();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0 });
+  const heading = { research: '#researchView .hero h1', stack: '#stackView .stack-hero h1', library: '#libraryView .library h1' }[button.dataset.view];
+  const target = heading && $(heading); if (target) target.focus({ preventScroll: true });
 }));
 document.querySelectorAll('.source-toggle').forEach(label => label.addEventListener('click', () => setTimeout(() => { label.classList.toggle('checked', label.querySelector('input').checked); updateDockMeta(); })));
 
@@ -93,6 +99,7 @@ function renderProject(project) {
   $('#statusText').textContent = `${sources.length} sources collected`;
   $('#webCount').textContent = `${byType('Web')} sources found`; $('#videoCount').textContent = `${byType('Video')} video query ready`; $('#paperCount').textContent = `${byType('Paper')} papers indexed`; const docCount = $('#docCount'); if (docCount) docCount.textContent = `${byType('Document')} documents matched`;
   $('.results h2').textContent = project.question;
+  document.querySelector('.results-head .eyebrow').innerHTML = '<i></i> EVIDENCE BRIEF';
   document.querySelector('.summary-card').innerHTML = `<p class="summary-lead">${escapeHtml(project.brief.opening)}</p>${project.brief.findings.map((finding, index) => `<div class="takeaway"><span>0${index + 1}</span><p>${escapeHtml(finding)}</p></div>`).join('')}<p class="brief-caveat">${escapeHtml(project.brief.caveat)}</p>`;
   const synthNote = project.brief.synthesis === 'llm' ? 'AI-synthesized with a local model · citations checked' : project.brief.synthesis === 'extractive' ? 'Auto-summarized from retrieved excerpts' : 'Template summary · enable Ollama for AI synthesis';
   document.querySelector('.summary-card').insertAdjacentHTML('afterbegin', `<p class="synth-note">${escapeHtml(synthNote)}</p>`);
@@ -144,7 +151,7 @@ $('#runResearch').addEventListener('click', async () => {
 });
 $('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
-$('#openBrief').addEventListener('click', () => $('#results').scrollIntoView({ behavior: 'smooth' }));
+$('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.finding-layout'); if (summary) summary.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 function exportUrl(format) { return currentProject ? `/api/projects/${currentProject.id}/export?format=${format}` : null; }
 $('#expMd').addEventListener('click', () => { const url = exportUrl('md'); if (url) window.location.href = url; else toast('Run a research question first.'); });
 $('#expJson').addEventListener('click', () => { const url = exportUrl('json'); if (url) window.location.href = url; else toast('Run a research question first.'); });
@@ -188,7 +195,7 @@ async function loadConversations() {
 }
 loadConversations();
 
-async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<div><b>Loading saved research…</b></div>';
+async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
   try {
     const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';

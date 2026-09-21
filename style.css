@@ -158,3 +158,17 @@ nav{gap:12px}
 .outline-button{padding:12px 14px}
 .source-toggle{padding:6px 0}
 }
+/* ── Micro-interactions, honesty states, a11y ── */
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+textarea{max-height:160px;overflow-y:auto}
+.run-button,.new-button,.outline-button,.mini-button,.theme-toggle{transition:transform .12s ease,background-color .2s ease,color .2s ease,border-color .2s ease}
+.run-button:active,.new-button:active,.outline-button:active,.mini-button:active{transform:scale(.96)}
+.agent-card,.stack-grid article,.conversation-card{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.agent-card:hover{transform:translateY(-2px)}
+.conversation-card:hover{transform:translateY(-1px)}
+.source{transition:background-color .15s ease}
+a.source:hover{background:rgba(237,89,57,.05)}
+.library-item>button:first-child{transition:background-color .15s ease}
+.library-item>button:first-child:hover{background:rgba(237,89,57,.05)}
+.skel{flex:1;border-radius:8px;background:linear-gradient(90deg,var(--line) 25%,var(--paper) 50%,var(--line) 75%);background-size:200% 100%;animation:skel 1.2s linear infinite}
+@keyframes skel{to{background-position:-200% 0}}

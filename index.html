@@ -35,7 +35,7 @@
   <main id="researchView">
     <section class="hero">
       <div class="eyebrow"><i></i> OPEN RESEARCH WORKBENCH</div>
-      <h1>Start with a question.<br><em>Leave with the whole picture.</em></h1>
+      <h1 tabindex="-1">Start with a question.<br><em>Leave with the whole picture.</em></h1>
       <p class="intro">Fieldnote sends a small team of focused agents across the web, YouTube, papers, and your files—then brings the evidence back into one readable brief.</p>
     </section>
 
@@ -47,7 +47,7 @@
     <section class="search-card" aria-label="Research prompt">
       <div class="prompt-row">
         <span class="prompt-icon">✦</span>
-        <textarea id="prompt" rows="2" placeholder="What would you like to understand?">How is AI changing the future of independent education?</textarea>
+        <textarea id="prompt" rows="2" aria-label="Research question" placeholder="What would you like to understand?">How is AI changing the future of independent education?</textarea>
         <button class="run-button" id="runResearch" title="Start research (⌘↵)">Research <span>↗</span></button>
       </div>
       <button class="dock-meta" id="dockMeta" aria-label="Edit research sources and depth"></button>
@@ -65,12 +65,12 @@
       <div class="work-strip" id="workStrip" aria-live="polite"><span class="strip-dots"><i data-strip="web-scout" title="Web scout"></i><i data-strip="video-listener" title="Video listener"></i><i data-strip="paper-trail" title="Paper trail"></i><i data-strip="document-reader" title="Document reader"></i></span><span id="stripText">Preparing…</span><div class="strip-bar"><i id="stripFill"></i></div></div>
       <div class="workspace-head">
         <div><div class="eyebrow"><i></i> LIVE RESEARCH</div><h2>Your research team is at work</h2></div>
-        <div class="status"><span></span> <b id="statusText">4 agents exploring</b> <small>· started just now</small></div>
+        <div class="status"><span></span> <b id="statusText">Agents standing by</b> <small>· run a question to begin</small></div>
       </div>
       <div class="agent-grid">
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web">⌘</span><span class="agent-state">SEARCHING</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:72%"></i></div><small id="webCount">18 sources found</small></article>
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video">▶</span><span class="agent-state">WATCHING</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:48%"></i></div><small id="videoCount">6 videos queued</small></article>
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper">⌁</span><span class="agent-state">READING</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:88%"></i></div><small id="paperCount">9 papers indexed</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web">⌘</span><span class="agent-state">READY</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:0%"></i></div><small id="webCount">Ready — run a question</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video">▶</span><span class="agent-state">READY</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:0%"></i></div><small id="videoCount">Ready — run a question</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper">⌁</span><span class="agent-state">READY</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:0%"></i></div><small id="paperCount">Ready — run a question</small></article>
         <article class="agent-card"><div class="agent-top"><span class="agent-dot doc">▤</span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span>→</span></button><small id="docCount">Private context on hold</small></article>
       </div>
     </section>
@@ -81,7 +81,7 @@
         <div class="loading-track"><i id="loadingFill"></i></div>
         <div class="loading-steps"><span class="active" data-step="plan">Plan</span><span data-step="gather">Gather evidence</span><span data-step="review">Review sources</span><span data-step="brief">Build brief</span></div>
       </div>
-      <div class="results-head"><div><div class="eyebrow"><i></i> EVIDENCE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd">Markdown</button><button class="mini-button" id="expJson">JSON</button><button class="mini-button" id="expCopy">Copy</button><button class="mini-button" id="expPrint">Print</button></div><button class="outline-button" id="openBrief">View brief <span>↗</span></button></div></div>
+      <div class="results-head"><div><div class="eyebrow"><i></i> SAMPLE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd">Markdown</button><button class="mini-button" id="expJson">JSON</button><button class="mini-button" id="expCopy">Copy</button><button class="mini-button" id="expPrint">Print</button></div><button class="outline-button" id="openBrief">View brief <span>↗</span></button></div></div>
       <div class="finding-layout">
         <article class="summary-card"><p class="summary-lead">AI is making high-quality learning more <mark>personal, accessible, and self-directed</mark>—while putting a premium on human guidance and trusted communities.</p><div class="takeaway"><span>01</span><p>Independent educators are using AI to serve smaller niches with curriculum previously only possible at scale.</p></div><div class="takeaway"><span>02</span><p>Evidence suggests the strongest outcomes come from blended, rather than autonomous, learning.</p></div></article>
         <div class="sources-panel"><div class="panel-title"><span>Evidence collected</span><b>33 sources</b></div><a href="#" class="source"><span class="source-type web-type">WEB</span><div><b>The emerging AI education ecosystem</b><small>MIT Technology Review · 8 min read</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type video-type">VIDEO</span><div><b>What AI tutors get right (and wrong)</b><small>YouTube · Transcript available · 24:18</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type paper-type">PAPER</span><div><b>Generative AI and learning outcomes</b><small>Stanford HAI · 2025</small></div><em>↗</em></a><button class="all-sources">View all sources <span>→</span></button></div>
@@ -90,10 +90,10 @@
   </main>
 
   <main id="stackView" hidden>
-    <section class="stack-hero"><div class="eyebrow"><i></i> NO PAYWALL REQUIRED</div><h1>Built to be yours.<br><em>Built with open tools.</em></h1><p>Every layer of Fieldnote can run locally or on free tiers. Use hosted services when convenient, swap them out when you're ready.</p></section>
+    <section class="stack-hero"><div class="eyebrow"><i></i> NO PAYWALL REQUIRED</div><h1 tabindex="-1">Built to be yours.<br><em>Built with open tools.</em></h1><p>Every layer of Fieldnote can run locally or on free tiers. Use hosted services when convenient, swap them out when you're ready.</p></section>
     <section class="stack-grid">
       <article><span>01</span><h3>Research agents</h3><p>Four specialist agents run in parallel over independent sources, then an evidence reviewer deduplicates and ranks everything before the brief is written.</p><code>planner · reviewer · brief writer</code></article>
-      <article><span>02</span><h3>Web & paper search</h3><p>Wikipedia and an optional SearXNG instance cover the open web. Crossref, Semantic Scholar, and arXiv provide free scholarly metadata.</p><code>SearXNG · arXiv · Crossref</code></article>
+      <article><span>02</span><h3>Web & paper search</h3><p>Wikipedia and an optional SearXNG instance cover the open web. Crossref, Semantic Scholar, arXiv, and OpenAlex provide free scholarly metadata.</p><code>SearXNG · arXiv · Crossref · OpenAlex</code></article>
       <article><span>03</span><h3>YouTube intelligence</h3><p>Live YouTube search surfaces real watch links for every question, so video leads stay current instead of canned.</p><code>youtube search · watch links</code></article>
       <article><span>04</span><h3>Your documents</h3><p>Local <code>.md</code> and <code>.txt</code> files are matched against your question on your own machine. Private material never leaves the deployment.</p><code>local files · offline matching</code></article>
       <article><span>05</span><h3>Interface</h3><p>A dependency-free page served by the same Node process — dark mode, live agent progress, evidence map, and a saved-research library included.</p><code>Node.js · vanilla UI · Docker</code></article>
@@ -102,7 +102,7 @@
     <section class="architecture"><div><div class="eyebrow"><i></i> HOW IT CONNECTS</div><h2>One question,<br>many careful readers.</h2></div><div class="flow"><div>Prompt</div><i>→</i><div>Planner agent</div><i>→</i><div class="flow-group"><span>Web scout</span><span>Video listener</span><span>Paper trail</span><span>Document reader</span></div><i>→</i><div>Evidence brief</div></div></section>
   </main>
 
-  <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1>Research that stays<br><em>useful later.</em></h1><div class="library-list"><div><b>How is AI changing the future of independent education?</b><span>33 sources · Today</span></div><div><b>Community-owned social networks</b><span>18 sources · Sep 18</span></div><div><b>The next generation of urban mobility</b><span>42 sources · Sep 12</span></div></div></section></main>
+  <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1 tabindex="-1">Research that stays<br><em>useful later.</em></h1><div class="library-list"><div><b>Loading saved research…</b></div></div></section></main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <footer><span class="foot-brand">fieldnote</span><span class="foot-status"><i id="footDot"></i><b id="footText">checking local service…</b></span><span class="foot-note">Local-first · your research never leaves this machine unless you enable web sources</span></footer>
