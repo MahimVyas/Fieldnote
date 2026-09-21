@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mahimvyas.github.io/Fieldnote/sitemap.xml

@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Collect static assets
         run: |
-          mkdir -p dist && cp index.html style.css script.js favicon.svg dist/
+          mkdir -p dist && cp index.html style.css script.js favicon.svg robots.txt sitemap.xml dist/
           TAG="${GITHUB_SHA:0:7}"
           sed -i "s|href=\"style.css\"|href=\"style.css?v=${TAG}\"|; s|src=\"script.js\"|src=\"script.js?v=${TAG}\"|; s|href=\"favicon.svg\"|href=\"favicon.svg?v=${TAG}\"|" dist/index.html
           grep -o 'style.css?v=[0-9a-f]*\|script.js?v=[0-9a-f]*\|favicon.svg?v=[0-9a-f]*' dist/index.html
