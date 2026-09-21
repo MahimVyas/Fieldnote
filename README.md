@@ -147,7 +147,8 @@ on disk: the static file server refuses to serve `data/` and `documents/`.
 
 Errors are JSON: `{ "error": "message" }`. `POST /api/runs` validates input
 (question length 4–1000 chars, at least one of `Web`, `Papers`, `YouTube`,
-`Documents`) and is rate-limited to 20 requests/minute per IP.
+`Documents`) and writes are rate-limited to 20 requests/minute per IP; reads
+(health, runs, projects) are unlimited.
 
 Example:
 

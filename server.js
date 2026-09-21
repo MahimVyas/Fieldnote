@@ -62,7 +62,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (url.pathname === '/favicon.ico') return send(res, req, started, requestId, 200, await fs.readFile(path.join(root, 'favicon.svg')), types['.svg']);
-    if (url.pathname.startsWith('/api/') && rateLimited(req)) return send(res, req, started, requestId, 429, { error: 'Too many requests. Please retry in a minute.' });
+    if (req.method !== 'GET' && url.pathname.startsWith('/api/') && rateLimited(req)) return send(res, req, started, requestId, 429, { error: 'Too many requests. Please retry in a minute.' });
     if (req.method === 'GET' && url.pathname === '/api/health') return send(res, req, started, requestId, 200, { status: 'ok', service: 'fieldnote', version, uptime_seconds: Math.floor((Date.now() - startedAt) / 1000), active_runs: [...runs.values()].filter(run => run.status === 'running' || run.status === 'queued').length });
     if (req.method === 'GET' && url.pathname === '/api/projects') return send(res, req, started, requestId, 200, await readProjects());
     if (req.method === 'POST' && url.pathname === '/api/runs') return send(res, req, started, requestId, 202, await createRun(await readJson(req)));

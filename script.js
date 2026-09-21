@@ -176,7 +176,7 @@ async function startRun(question, sources) {
     showResultLoading();
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
-    while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 700)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
+    while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 1000)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
     updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
   finally { setRunning(false); }
