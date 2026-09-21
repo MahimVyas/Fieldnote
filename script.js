@@ -341,8 +341,94 @@ function renderLibraryList(projects) {
   list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); loadLibrary(); loadConversations(); }));
 }
 
-(async function serviceStatus() {
-  const dot = $('#footDot'); const text = $('#footText'); if (!dot || !text) return;
+/* ── Offline shell ── */
+if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
+/* ── Command palette (⌘K) ── */
+function paletteItems(projects) {
+  const items = [
+    { label: 'New research', hint: 'prompt', run: () => $('#newResearch').click() },
+    { label: 'Go to Research', hint: 'view', run: () => $('.nav-link[data-view="research"]').click() },
+    { label: 'Go to Library', hint: 'view', run: () => $('.nav-link[data-view="library"]').click() },
+    { label: 'Go to Tech stack', hint: 'view', run: () => $('.nav-link[data-view="stack"]').click() },
+    { label: 'Toggle dark mode', hint: 'theme', run: () => $('#themeToggle').click() },
+    { label: `Depth: switch to ${depth === 'Thorough' ? 'Quick' : 'Thorough'}`, hint: 'depth', run: () => $('#depthButton').click() }
+  ];
+  if (currentProject) {
+    items.push({ label: 'Download brief as Markdown', hint: 'export', run: () => $('#expMd').click() });
+    items.push({ label: 'Print brief', hint: 'export', run: () => $('#expPrint').click() });
+  }
+  projects.slice(0, 8).forEach(p => items.push({ label: p.question, hint: `${p.sources.length} sources`, run: () => { $('#prompt').value = p.question; renderProject(p); } }));
+  return items;
+}
+function filterPalette(items, q) {
+  const terms = String(q || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return items;
+  return items.map(item => {
+    const hay = `${item.label} ${item.hint || ''}`.toLowerCase();
+    let score = 0;
+    for (const t of terms) { const at = hay.indexOf(t); if (at < 0) return null; score += at; }
+    return { item, score };
+  }).filter(Boolean).sort((a, b) => a.score - b.score).map(e => e.item);
+}
+let paletteCache = [];
+let paletteActive = 0;
+async function openPalette() {
+  const backdrop = $('#paletteBackdrop'); const input = $('#paletteInput'); if (!backdrop || !input) return;
+  let projects = [];
+  try { const r = await fetch('/api/projects'); if (r.ok) projects = mergedLibrary(await r.json()); } catch {}
+  if (!projects.length) projects = readCache();
+  paletteCache = paletteItems(projects);
+  paletteActive = 0;
+  renderPalette('');
+  backdrop.hidden = false; input.value = ''; input.focus();
+}
+function closePalette() { const b = $('#paletteBackdrop'); if (b) b.hidden = true; }
+function renderPalette(q) {
+  const list = $('#paletteList'); if (!list) return;
+  const items = filterPalette(paletteCache, q).slice(0, 9);
+  list.innerHTML = items.length ? items.map((item, i) => `<button role="option" data-pal="${i}" aria-selected="${i === paletteActive}"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.hint || '')}</span></button>`).join('') : '<div class="palette-empty">No matches.</div>';
+  list.querySelectorAll('[data-pal]').forEach(b => b.addEventListener('click', () => { const it = items[Number(b.dataset.pal)]; closePalette(); if (it) it.run(); }));
+  highlightPalette();
+}
+function highlightPalette() {
+  document.querySelectorAll('#paletteList [data-pal]').forEach((b, i) => b.classList.toggle('active', i === paletteActive));
+}
+$('#paletteInput').addEventListener('input', e => { paletteActive = 0; renderPalette(e.target.value); });
+$('#paletteInput').addEventListener('keydown', e => {
+  const items = filterPalette(paletteCache, e.target.value).slice(0, 9);
+  if (e.key === 'ArrowDown') { e.preventDefault(); paletteActive = Math.min(paletteActive + 1, items.length - 1); highlightPalette(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); paletteActive = Math.max(paletteActive - 1, 0); highlightPalette(); }
+  else if (e.key === 'Enter') { const it = items[paletteActive]; closePalette(); if (it) it.run(); }
+  else if (e.key === 'Escape') closePalette();
+});
+$('#paletteBackdrop').addEventListener('click', e => { if (e.target.id === 'paletteBackdrop') closePalette(); });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#paletteBackdrop').hidden ? openPalette() : closePalette(); }
+});
+
+/* ── Voice input ── */
+(function voice() {
+  const btn = $('#micButton'); if (!btn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  btn.hidden = false;
+  const rec = new SR();
+  rec.lang = (navigator.language || 'en-US'); rec.interimResults = false; rec.maxAlternatives = 1;
+  rec.onresult = e => {
+    const text = [...e.results].map(r => r[0].transcript).join(' ');
+    const cur = $('#prompt').value.trim();
+    $('#prompt').value = cur ? `${cur} ${text}` : text;
+    autogrow(); $('#prompt').focus();
+  };
+  rec.onend = () => btn.classList.remove('recording');
+  rec.onerror = () => { btn.classList.remove('recording'); toast('Microphone unavailable right now.'); };
+  btn.addEventListener('click', () => { try { btn.classList.add('recording'); rec.start(); } catch { btn.classList.remove('recording'); } });
+})();
+
+(async function serviceStatus() {  const dot = $('#footDot'); const text = $('#footText'); if (!dot || !text) return;
   if (DEMO) { text.textContent = 'static preview — run npm start locally for full research'; return; }
   try {
     const response = await fetch('/api/health'); if (!response.ok) throw new Error('unhealthy');

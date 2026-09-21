@@ -123,6 +123,21 @@ test('client download creates a named blob anchor', () => {
   assert.equal(anchor.href, 'blob:test');
 });
 
+test('palette filter matches all terms, ranks prefix hits first', () => {
+  const { sandbox } = loadFrontend();
+  const items = [
+    { label: 'Download brief as Markdown', hint: 'export' },
+    { label: 'Go to Library', hint: 'view' },
+    { label: 'Toggle dark mode', hint: 'theme' }
+  ];
+  const run = q => [...vm.runInContext(`filterPalette(${JSON.stringify(items)}, ${JSON.stringify(q)}).map(i => i.label)`, sandbox)];
+  assert.deepEqual(run(''), items.map(i => i.label));
+  assert.deepEqual(run('LIBRARY'), ['Go to Library']);
+  assert.deepEqual(run('brief markdown'), ['Download brief as Markdown']);
+  assert.deepEqual(run('d d'), ['Download brief as Markdown', 'Toggle dark mode']);
+  assert.deepEqual(run('zzz'), []);
+});
+
 test('full run flow renders, caches, and toasts', async () => {
   const { sandbox, registry, bodyClasses } = loadFrontend();
   const result = { id: 'run-1', question: 'Flow question?', depth: 'Thorough', created_at: '2026-01-01',

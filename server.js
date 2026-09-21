@@ -18,11 +18,11 @@ const root = __dirname;
 const startedAt = Date.now();
 const config = Object.freeze({ port: Number(process.env.PORT || 3000), dataPath: process.env.FIELDNOTE_DATA_PATH || path.join(root, 'data', 'research.json'), documentsPath: process.env.FIELDNOTE_DOCUMENTS_PATH || path.join(root, 'documents'), maxQuestionLength: 1000, maxSavedProjects: 500, rateWindowMs: 60_000, rateLimit: 20 });
 const runs = new Map(); const rateBuckets = new Map();
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 /* Only these files are ever served. Everything else (server.js, agents.js,
    package.json, .env, data/, documents/) returns 404. WHATWG URLs normalize
    dot segments before we see them, so a blocklist cannot protect us. */
-const publicFiles = new Set(['index.html', 'script.js', 'style.css', 'favicon.svg', 'robots.txt', 'sitemap.xml']);
+const publicFiles = new Set(['index.html', 'script.js', 'style.css', 'favicon.svg', 'robots.txt', 'sitemap.xml', 'manifest.webmanifest', 'sw.js', 'icon-192.png', 'icon-512.png', 'maskable-512.png']);
 const csp = "default-src 'self'; base-uri 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'";
 
 function log(status, req, started, requestId, error) {

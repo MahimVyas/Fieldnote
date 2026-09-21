@@ -42,6 +42,9 @@ no `npm install` required.
   takeaways and self-test Q&A.
 - **Take it with you** — export any brief as Markdown or JSON, copy it to the
   clipboard, or print it, straight from the results header.
+- **Installable app** — manifest, generated icons, and an offline-caching
+  service worker (app shell only, never the API) make Fieldnote at home on
+  phones and desktops.
 - **Async runs with live progress** — `POST /api/runs` returns `202`
   immediately; poll `GET /api/runs/:id` for per-agent status.
 - **Local-first library** — research is saved to `data/research.json` and
@@ -56,7 +59,8 @@ no `npm install` required.
   bottom chat bar; home shows your past research as pick-up-where-you-left-off
   conversations. While a run is in flight the page enters a quiet working
   mode: hero and agent cards collapse into a sticky status strip, and only
-  progress plus results stay on screen. `⌘↵` starts a run.
+  progress plus results stay on screen. `⌘↵` starts a run, `⌘K` opens the
+  command palette, and the mic button dictates questions where supported.
 
 ## Quickstart
 
