@@ -179,7 +179,7 @@ if (window.matchMedia('(pointer:fine)').matches) $('#prompt').focus({ preventScr
 function liftDock() {
   const bar = document.querySelector('.search-card'); const foot = document.querySelector('footer');
   if (!bar || !foot) return;
-  const lift = Math.max(0, window.innerHeight - 12 - foot.getBoundingClientRect().top);
+  const lift = Math.max(0, window.innerHeight - 12 - foot.getBoundingClientRect().top + 16);
   bar.style.transform = lift ? `translateY(${-lift}px)` : '';
 }
 let liftQueued = false;
