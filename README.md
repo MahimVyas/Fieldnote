@@ -44,8 +44,9 @@ no `npm install` required.
   clipboard, or print it, straight from the results header.
 - **Async runs with live progress** — `POST /api/runs` returns `202`
   immediately; poll `GET /api/runs/:id` for per-agent status.
-- **Local-first library** — research is saved to `data/research.json` and can
-  be reopened or deleted from the Library view.
+- **Local-first library** — research is saved to `data/research.json` and
+  mirrored into browser storage, so past briefs survive server restarts and
+  stay openable, exportable, and deletable even when the server is down.
 - **Production hygiene** — structured access logs with request IDs, rate
   limiting, atomic persistence, security headers (incl. CSP), health endpoint
   with version, graceful shutdown, non-root Docker image with `HEALTHCHECK`.

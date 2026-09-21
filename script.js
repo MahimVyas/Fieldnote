@@ -3,6 +3,46 @@ const $ = (s) => document.querySelector(s);
    synchronously so not a single failing request ever hits the console. */
 const DEMO = /(^|\.)github\.io$/.test(location.hostname) || location.protocol === 'file:';
 const DEMO_MESSAGE = 'Static preview only — run npm start locally for full research.';
+
+/* ── Browser library cache: briefs survive server restarts and data loss ── */
+const LIBRARY_CACHE_KEY = 'fieldnote.library.v1';
+const LIBRARY_CACHE_MAX = 20;
+function readCache() { try { return JSON.parse(localStorage.getItem(LIBRARY_CACHE_KEY)) || []; } catch { return []; } }
+function writeCache(projects) {
+  const items = projects.slice(0, LIBRARY_CACHE_MAX);
+  try { localStorage.setItem(LIBRARY_CACHE_KEY, JSON.stringify(items)); }
+  catch { try { localStorage.setItem(LIBRARY_CACHE_KEY, JSON.stringify(items.slice(0, 10))); } catch {} }
+}
+function cacheProject(project) {
+  if (!project || !project.id) return;
+  const items = readCache().filter(p => p.id !== project.id);
+  items.unshift(project); writeCache(items);
+}
+function uncacheProject(id) { writeCache(readCache().filter(p => p.id !== id)); }
+function mergedLibrary(serverProjects) {
+  const seen = new Set(serverProjects.map(p => p.id));
+  return [...serverProjects, ...readCache().filter(p => !seen.has(p.id)).map(p => ({ ...p, _localOnly: true }))];
+}
+function projectToMarkdown(p) {
+  const b = p.brief || {}; const sources = p.sources || [];
+  const lines = [`# ${p.question}`, '', `*Fieldnote evidence brief · ${p.created_at || ''} · ${sources.length} sources · synthesis: ${b.synthesis || 'template'}*`, '', '## Summary', '', b.opening || '', '', '## Key findings', ''];
+  (b.findings || []).forEach((f, i) => lines.push(`${i + 1}. ${f}`));
+  if (b.takeaways && b.takeaways.length) { lines.push('', '## Key takeaways', ''); b.takeaways.forEach((t, i) => lines.push(`${i + 1}. ${t}`)); }
+  lines.push('', '## Evidence', '');
+  (b.evidence_map || []).forEach(s => lines.push(`- [${s.title}](${s.url || ''}) — ${s.source_type} (${s.reliability})${s.open_access_url ? ` · [open access](${s.open_access_url})` : ''}`));
+  if (b.faq && b.faq.length) { lines.push('', '## Study questions', ''); b.faq.forEach((f, i) => lines.push(`${i + 1}. **${f.q}**`, `   ${f.a}`)); }
+  lines.push('', '## Research gaps', '');
+  (b.research_gaps || []).forEach((g, i) => lines.push(`${i + 1}. ${g}`));
+  lines.push('', '## All sources', '');
+  sources.forEach(s => lines.push(`- [${s.title}](${s.url || ''}) — ${s.publisher || s.source_type} (${s.source_type}, ${s.reliability})`));
+  lines.push('', '## Caveat', '', b.caveat || '');
+  return lines.join('\n');
+}
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], { type }); const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
 let toastTimer = 0;
 const toast = (message) => { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200); };
 const promptEl = $('#prompt');
@@ -137,7 +177,7 @@ async function startRun(question, sources) {
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
     while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 700)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
-    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
+    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
   finally { setRunning(false); }
 }
@@ -159,17 +199,15 @@ $('#runResearch').addEventListener('click', async () => {
 $('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
 $('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.summary-card'); if (!summary) return; summary.scrollIntoView({ behavior: 'smooth', block: 'center' }); summary.classList.remove('flash'); void summary.offsetWidth; summary.classList.add('flash'); setTimeout(() => summary.classList.remove('flash'), 1300); });
-function exportUrl(format) { return currentProject ? `/api/projects/${currentProject.id}/export?format=${format}` : null; }
+function exportFilename(format) { return currentProject ? `fieldnote-${currentProject.id.slice(0, 8)}.${format}` : null; }
 function guardExport() { if (DEMO) { toast(DEMO_MESSAGE); return false; } if (!currentProject) { toast('Run a research question first.'); return false; } return true; }
-$('#expMd').addEventListener('click', () => { if (guardExport()) window.location.href = exportUrl('md'); });
-$('#expJson').addEventListener('click', () => { if (guardExport()) window.location.href = exportUrl('json'); });
+$('#expMd').addEventListener('click', () => { if (guardExport()) downloadFile(exportFilename('md'), projectToMarkdown(currentProject), 'text/markdown'); });
+$('#expJson').addEventListener('click', () => { if (guardExport()) downloadFile(exportFilename('json'), JSON.stringify(currentProject, null, 2), 'application/json'); });
 $('#expPrint').addEventListener('click', () => window.print());
 $('#expCopy').addEventListener('click', async () => {
   if (!guardExport()) return;
-  try {
-    const response = await fetch(exportUrl('md')); if (!response.ok) throw new Error('Export failed.');
-    await navigator.clipboard.writeText(await response.text()); toast('Brief copied to clipboard.');
-  } catch { toast('Could not copy. Try the Markdown download instead.'); }
+  try { await navigator.clipboard.writeText(projectToMarkdown(currentProject)); toast('Brief copied to clipboard.'); }
+  catch { toast('Could not copy. Try the Markdown download instead.'); }
 });
 $('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>${icon('chevron-down')}</b>`; updateDockMeta(); toast(`Research depth set to ${depth}.`); });
 $('#dockMeta').addEventListener('click', () => document.body.classList.toggle('dock-expanded'));
@@ -206,24 +244,39 @@ async function loadConversations() {
   if (DEMO) { section.hidden = true; return; }
   try {
     const response = await fetch('/api/projects'); if (!response.ok) throw new Error('unavailable');
-    const projects = await response.json();
+    const projects = mergedLibrary(await response.json());
     document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     if (!projects.length) { section.hidden = true; return; }
     section.hidden = false;
-    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
+    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); if (!p) return; $('#prompt').value = p.question; renderProject(p); }));
-    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadConversations(); }));
-  } catch { section.hidden = true; }
+    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); loadConversations(); }));
+  } catch {
+    const cached = readCache();
+    if (!cached.length) { section.hidden = true; return; }
+    section.hidden = false;
+    list.innerHTML = cached.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()} · this device</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
+    list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = cached.find(item => item.id === button.dataset.open); if (!p) return; $('#prompt').value = p.question; renderProject(p); }));
+    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => { uncacheProject(button.dataset.delete); loadConversations(); }));
+  }
 }
 loadConversations();
 
 async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { list.innerHTML = '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>'; return; } list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
   try {
-    const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
-    list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
-    list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
-    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); loadConversations(); }));
-  } catch { list.innerHTML = DEMO ? '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>' : '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
+    const response = await fetch('/api/projects'); const projects = mergedLibrary(await response.json()); renderLibraryList(projects);
+  } catch {
+    const cached = readCache();
+    if (cached.length) renderLibraryList(cached.map(p => ({ ...p, _localOnly: true })));
+    else list.innerHTML = DEMO ? '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>' : '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>';
+  }
+}
+function renderLibraryList(projects) {
+  const list = $('.library-list'); if (!list) return;
+  document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
+  list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
+  list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
+  list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); loadLibrary(); loadConversations(); }));
 }
 
 (async function serviceStatus() {
