@@ -94,9 +94,11 @@ function setResultProgress(percent, label, step) {
   document.querySelectorAll('.loading-steps span').forEach(item => item.classList.toggle('active', item.dataset.step === step));
 }
 function showResultLoading() {
-  visibleProgress = 8; $('#resultsLoading').hidden = false;
+  visibleProgress = 8;
+  const box = $('#resultsLoading'); box.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add('open')));
   setResultProgress(8, 'Planner is mapping the research question', 'plan');
-  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
 function syncResultProgress(run) {
   const complete = run.agents.filter(agent => agent.status === 'completed' || agent.status === 'failed').length;
@@ -107,7 +109,9 @@ function syncResultProgress(run) {
 }
 function finishResultLoading(success) {
   setResultProgress(100, success ? 'Your evidence brief is ready' : 'Research run needs attention', 'brief');
-  setTimeout(() => { $('#resultsLoading').hidden = true; }, 520);
+  const box = $('#resultsLoading');
+  setTimeout(() => box.classList.remove('open'), 650);
+  setTimeout(() => { box.hidden = true; }, 1250);
 }
 
 document.querySelectorAll('.nav-link').forEach(button => button.addEventListener('click', () => {
