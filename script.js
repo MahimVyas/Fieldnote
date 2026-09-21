@@ -48,6 +48,22 @@ const toast = (message) => { const el = $('#toast'); el.textContent = message; e
 const promptEl = $('#prompt');
 function autogrow() { promptEl.style.height = 'auto'; promptEl.style.height = Math.min(promptEl.scrollHeight, 160) + 'px'; }
 promptEl.addEventListener('input', autogrow); autogrow();
+const SAMPLE_QUESTIONS = [
+  'How is AI changing the future of independent education?',
+  'What does research say about spaced repetition and long-term retention?',
+  'Are community-owned social networks viable alternatives to ad-funded platforms?',
+  'What is the evidence from universal basic income pilots?',
+  'How do cities reduce traffic fatalities without banning cars?',
+  'Does intermittent fasting improve metabolic health?',
+  'What are the strongest arguments for and against degrowth economics?',
+  'How does sleep affect memory consolidation in adults?',
+  'What makes remote teams perform as well as co-located ones?',
+  'Is nuclear power essential for deep decarbonization?',
+  'How do recommendation algorithms shape political polarization?',
+  'Which interventions actually reduce plastic waste?'
+];
+promptEl.value = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
+autogrow();
 
 function paintTheme(theme) {
   document.documentElement.dataset.theme = theme;
