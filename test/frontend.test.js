@@ -123,6 +123,22 @@ test('client download creates a named blob anchor', () => {
   assert.equal(anchor.href, 'blob:test');
 });
 
+test('evidence sort orders by citations and year', () => {
+  const { sandbox, registry } = loadFrontend();
+  vm.runInContext(`currentEvidence = [
+    {title:'Old Cited',source_type:'Paper',reliability:'scholarly',relevance:80,excerpt:'E',published_at:'2020-5-1',citations:50},
+    {title:'New Uncited',source_type:'Paper',reliability:'scholarly',relevance:90,excerpt:'E',published_at:'2024-1-1',citations:1},
+    {title:'Web Hit',source_type:'Web',reliability:'context',relevance:95,excerpt:'E',published_at:null,citations:0}
+  ];`, sandbox);
+  vm.runInContext(`$('#evidenceFilter').value='all'; $('#evidenceSort').value='cited'; applyEvidenceView();`, sandbox);
+  let html = registry.get('#evidenceArticles').innerHTML;
+  assert.ok(html.indexOf('Old Cited') < html.indexOf('New Uncited'));
+  vm.runInContext(`$('#evidenceSort').value='newest'; applyEvidenceView();`, sandbox);
+  html = registry.get('#evidenceArticles').innerHTML;
+  assert.ok(html.indexOf('New Uncited') < html.indexOf('Old Cited'));
+  assert.ok(html.indexOf('Web Hit') > html.indexOf('Old Cited'));
+});
+
 test('evidence dropdown filter narrows articles', () => {
   const { sandbox, registry } = loadFrontend();
   vm.runInContext(`currentEvidence = [{title:'Paper A',source_type:'Paper',reliability:'scholarly',relevance:90,excerpt:'E'},{title:'Blog B',source_type:'Web',reliability:'context',relevance:70,excerpt:'E2'}]; renderEvidenceList(currentEvidence.filter(i => i.source_type === 'Paper'));`, sandbox);
