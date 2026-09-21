@@ -179,3 +179,14 @@ a.source:hover{background:rgba(237,89,57,.05)}
 .library-item>button:first-child:hover{background:rgba(237,89,57,.05)}
 .skel{flex:1;border-radius:8px;background:linear-gradient(90deg,var(--line) 25%,var(--paper) 50%,var(--line) 75%);background-size:200% 100%;animation:skel 1.2s linear infinite}
 @keyframes skel{to{background-position:-200% 0}}
+/* ── Icon system ── */
+.icon{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.18em}
+.prompt-icon .icon{font-size:21px}
+.run-button .icon,.new-button .icon{font-size:16px}
+.agent-dot .icon{width:14px;height:14px}
+.mini-button .icon,.oa-badge .icon,.gap-dig .icon,.connect-btn .icon,.outline-button .icon,.depth-select .icon{font-size:13px}
+.delete-project .icon{width:13px;height:13px}
+.delete-project{display:inline-flex;align-items:center;justify-content:center}
+.mini-button,.oa-badge,.connect-btn{display:inline-flex;align-items:center;gap:6px}
+.gap-dig{display:flex;align-items:center;gap:6px}
+.theme-icon{display:inline-flex}

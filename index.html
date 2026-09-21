@@ -18,6 +18,26 @@
 </head>
 <body>
   <a class="skip-link" href="#researchView">Skip to research</a>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.7 5.7 1.9-5.7 1.9L12 18.2l-1.9-5.7L4.4 10.6l5.7-1.9z"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+  </defs></svg>
   <div class="noise"></div>
   <header>
     <a class="brand" href="#"><span class="brand-mark">f</span><span>fieldnote</span></a>
@@ -27,8 +47,8 @@
       <button class="nav-link" data-view="stack">Tech stack</button>
     </nav>
     <div class="header-actions">
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-icon">☾</span></button>
-      <button class="new-button" id="newResearch"><span>+</span> New research</button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-icon"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
+      <button class="new-button" id="newResearch"><span><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span> New research</button>
     </div>
   </header>
 
@@ -46,9 +66,9 @@
 
     <section class="search-card" aria-label="Research prompt">
       <div class="prompt-row">
-        <span class="prompt-icon">✦</span>
+        <span class="prompt-icon"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg></span>
         <textarea id="prompt" rows="2" aria-label="Research question" placeholder="What would you like to understand?">How is AI changing the future of independent education?</textarea>
-        <button class="run-button" id="runResearch" title="Start research (⌘↵)">Research <span>↗</span></button>
+        <button class="run-button" id="runResearch" title="Start research (⌘↵)">Research <span><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg></span></button>
       </div>
       <button class="dock-meta" id="dockMeta" aria-label="Edit research sources and depth"></button>
       <div class="research-options">
@@ -57,7 +77,7 @@
         <label class="source-toggle checked"><input type="checkbox" checked data-source="YouTube"><span></span> YouTube</label>
         <label class="source-toggle checked"><input type="checkbox" checked data-source="Papers"><span></span> Papers</label>
         <label class="source-toggle"><input type="checkbox" data-source="Documents"><span></span> My documents</label>
-        <div class="depth-select"><span>Depth</span><button id="depthButton" aria-label="Toggle research depth">Thorough <b>⌄</b></button></div>
+        <div class="depth-select"><span>Depth</span><button id="depthButton" aria-label="Toggle research depth">Thorough <b><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></b></button></div>
       </div>
     </section>
 
@@ -68,10 +88,10 @@
         <div class="status"><span></span> <b id="statusText">Agents standing by</b> <small>· run a question to begin</small></div>
       </div>
       <div class="agent-grid">
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web">⌘</span><span class="agent-state">READY</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:0%"></i></div><small id="webCount">Ready — run a question</small></article>
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video">▶</span><span class="agent-state">READY</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:0%"></i></div><small id="videoCount">Ready — run a question</small></article>
-        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper">⌁</span><span class="agent-state">READY</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:0%"></i></div><small id="paperCount">Ready — run a question</small></article>
-        <article class="agent-card"><div class="agent-top"><span class="agent-dot doc">▤</span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span>→</span></button><small id="docCount">Private context on hold</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span><span class="agent-state">READY</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:0%"></i></div><small id="webCount">Ready — run a question</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg></span><span class="agent-state">READY</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:0%"></i></div><small id="videoCount">Ready — run a question</small></article>
+        <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="agent-state">READY</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:0%"></i></div><small id="paperCount">Ready — run a question</small></article>
+        <article class="agent-card"><div class="agent-top"><span class="agent-dot doc"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></button><small id="docCount">Private context on hold</small></article>
       </div>
     </section>
 
@@ -81,7 +101,7 @@
         <div class="loading-track"><i id="loadingFill"></i></div>
         <div class="loading-steps"><span class="active" data-step="plan">Plan</span><span data-step="gather">Gather evidence</span><span data-step="review">Review sources</span><span data-step="brief">Build brief</span></div>
       </div>
-      <div class="results-head"><div><div class="eyebrow"><i></i> SAMPLE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd">Markdown</button><button class="mini-button" id="expJson">JSON</button><button class="mini-button" id="expCopy">Copy</button><button class="mini-button" id="expPrint">Print</button></div><button class="outline-button" id="openBrief">View brief <span>↗</span></button></div></div>
+      <div class="results-head"><div><div class="eyebrow"><i></i> SAMPLE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Markdown</button><button class="mini-button" id="expJson"><svg class="icon" aria-hidden="true"><use href="#i-code"/></svg> JSON</button><button class="mini-button" id="expCopy"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg> Copy</button><button class="mini-button" id="expPrint"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg> Print</button></div><button class="outline-button" id="openBrief">View brief <span><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg></span></button></div></div>
       <div class="finding-layout">
         <article class="summary-card"><p class="summary-lead">AI is making high-quality learning more <mark>personal, accessible, and self-directed</mark>—while putting a premium on human guidance and trusted communities.</p><div class="takeaway"><span>01</span><p>Independent educators are using AI to serve smaller niches with curriculum previously only possible at scale.</p></div><div class="takeaway"><span>02</span><p>Evidence suggests the strongest outcomes come from blended, rather than autonomous, learning.</p></div></article>
         <div class="sources-panel"><div class="panel-title"><span>Evidence collected</span><b>33 sources</b></div><a href="#" class="source"><span class="source-type web-type">WEB</span><div><b>The emerging AI education ecosystem</b><small>MIT Technology Review · 8 min read</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type video-type">VIDEO</span><div><b>What AI tutors get right (and wrong)</b><small>YouTube · Transcript available · 24:18</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type paper-type">PAPER</span><div><b>Generative AI and learning outcomes</b><small>Stanford HAI · 2025</small></div><em>↗</em></a><button class="all-sources">View all sources <span>→</span></button></div>

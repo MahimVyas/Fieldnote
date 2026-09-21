@@ -15,7 +15,7 @@ function paintTheme(theme) {
   const toggle = $('#themeToggle');
   toggle.setAttribute('aria-pressed', String(dark));
   toggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-  toggle.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
+  toggle.querySelector('.theme-icon').innerHTML = icon(dark ? 'sun' : 'moon');
   const meta = $('#themeColor');
   if (meta) meta.content = dark ? '#131210' : '#f5f1e8';
 }
@@ -67,15 +67,16 @@ document.querySelectorAll('.source-toggle').forEach(label => label.addEventListe
 
 function setRunning(running) {
   const button = $('#runResearch'); button.disabled = running;
-  button.innerHTML = running ? 'Researching <span>…</span>' : 'Research <span>↗</span>';
+  button.innerHTML = running ? `Researching ${icon('spark')}` : `Research <span>${icon('send')}</span>`;
   document.querySelectorAll('.agent-card.active-agent').forEach(card => card.classList.toggle('is-working', running));
 }
 function escapeHtml(value) { const node = document.createElement('span'); node.textContent = value; return node.innerHTML; }
+function icon(name) { return `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 function oaBadge(source) {
-  return source.open_access_url ? `<a class="oa-badge" href="${escapeHtml(source.open_access_url)}" target="_blank" rel="noopener noreferrer">Open access ↗</a>` : '';
+  return source.open_access_url ? `<a class="oa-badge" href="${escapeHtml(source.open_access_url)}" target="_blank" rel="noopener noreferrer">${icon('file')} Open access</a>` : '';
 }
 function oaChip(source) {
-  return source.open_access_url ? `<span class="oa-badge" data-href="${escapeHtml(source.open_access_url)}" role="link" tabindex="0">Open access ↗</span>` : '';
+  return source.open_access_url ? `<span class="oa-badge" data-href="${escapeHtml(source.open_access_url)}" role="link" tabindex="0">${icon('file')} Open access</span>` : '';
 }
 document.addEventListener('click', event => {
   const chip = event.target.closest ? event.target.closest('.oa-badge[data-href]') : null;
@@ -89,7 +90,7 @@ document.addEventListener('keydown', event => {
 });
 function sourceHtml(source) {
   const type = source.source_type.toLowerCase(); const date = source.published_at ? ` · ${source.published_at}` : '';
-  const score = source.relevance?.score ? ` · ${source.relevance.score}% match` : ''; const body = `<span class="source-type ${type}-type">${source.source_type.toUpperCase()}</span><div><b>${escapeHtml(source.title)}</b><small>${escapeHtml(source.publisher || source.source_type)}${date}${score} · ${escapeHtml(source.reliability || 'unrated')}</small><p class="source-excerpt">${escapeHtml(source.excerpt || 'No excerpt available.')}</p>${oaChip(source)}</div><em>${source.url ? '↗' : 'local'}</em>`;
+  const score = source.relevance?.score ? ` · ${source.relevance.score}% match` : ''; const body = `<span class="source-type ${type}-type">${source.source_type.toUpperCase()}</span><div><b>${escapeHtml(source.title)}</b><small>${escapeHtml(source.publisher || source.source_type)}${date}${score} · ${escapeHtml(source.reliability || 'unrated')}</small><p class="source-excerpt">${escapeHtml(source.excerpt || 'No excerpt available.')}</p>${oaChip(source)}</div><em>${source.url ? icon('send') : 'local'}</em>`;
   return source.url ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source">${body}</a>` : `<div class="source source-local">${body}</div>`;
 }
 function updateAgents(agents) {
@@ -107,11 +108,11 @@ function renderProject(project) {
   document.querySelector('.summary-card').innerHTML = `<p class="summary-lead">${escapeHtml(project.brief.opening)}</p>${project.brief.findings.map((finding, index) => `<div class="takeaway"><span>0${index + 1}</span><p>${escapeHtml(finding)}</p></div>`).join('')}<p class="brief-caveat">${escapeHtml(project.brief.caveat)}</p>`;
   const synthNote = project.brief.synthesis === 'llm' ? 'AI-synthesized with a local model · citations checked' : project.brief.synthesis === 'extractive' ? 'Auto-summarized from retrieved excerpts' : 'Template summary · enable Ollama for AI synthesis';
   document.querySelector('.summary-card').insertAdjacentHTML('afterbegin', `<p class="synth-note">${escapeHtml(synthNote)}</p>`);
-  document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>Evidence collected</span><b>${sources.length} sources</b></div>${sources.slice(0, 6).map(sourceHtml).join('')}<button class="all-sources" id="allSources">View all ${sources.length} sources <span>→</span></button>`;
+  document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>Evidence collected</span><b>${sources.length} sources</b></div>${sources.slice(0, 6).map(sourceHtml).join('')}<button class="all-sources" id="allSources">View all ${sources.length} sources <span>${icon('arrow-right')}</span></button>`;
   $('#allSources').addEventListener('click', () => { document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>All evidence</span><b>${sources.length} sources</b></div>${sources.map(sourceHtml).join('')}`; });
   document.querySelector('.report-details')?.remove();
   const coverage = project.brief.coverage || {}; const evidence = project.brief.evidence_map || []; const gaps = project.brief.research_gaps || [];
-  document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div>${(project.brief.takeaways?.length || project.brief.faq?.length) ? `<div class="study-block"><div><h4>Key takeaways</h4>${(project.brief.takeaways || []).map(t => `<p>${escapeHtml(t)}</p>`).join('') || '<p>No takeaways extracted.</p>'}</div><div><h4>Self-test questions</h4>${(project.brief.faq || []).map(f => `<details><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`).join('') || '<p>Enable AI synthesis for generated study questions.</p>'}</div></div>` : ''}<div class="evidence-map"><div><h4>Most relevant evidence</h4>${evidence.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`).join('')}</div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map((gap, index) => `<p>${escapeHtml(gap)}<button class="gap-dig" data-gap="${index}">Dig deeper <span>→</span></button></p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
+  document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div>${(project.brief.takeaways?.length || project.brief.faq?.length) ? `<div class="study-block"><div><h4>Key takeaways</h4>${(project.brief.takeaways || []).map(t => `<p>${escapeHtml(t)}</p>`).join('') || '<p>No takeaways extracted.</p>'}</div><div><h4>Self-test questions</h4>${(project.brief.faq || []).map(f => `<details><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`).join('') || '<p>Enable AI synthesis for generated study questions.</p>'}</div></div>` : ''}<div class="evidence-map"><div><h4>Most relevant evidence</h4>${evidence.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`).join('')}</div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map((gap, index) => `<p>${escapeHtml(gap)}<button class="gap-dig" data-gap="${index}">Dig deeper <span>${icon('arrow-right')}</span></button></p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
   document.querySelectorAll('.gap-dig').forEach(button => button.addEventListener('click', () => digDeeper(Number(button.dataset.gap))));
   if (project.errors?.length) toast(`Partial result: ${project.errors[0]}`);
   document.body.classList.remove('working'); document.body.classList.add('has-results');
@@ -170,7 +171,7 @@ $('#expCopy').addEventListener('click', async () => {
     await navigator.clipboard.writeText(await response.text()); toast('Brief copied to clipboard.');
   } catch { toast('Could not copy. Try the Markdown download instead.'); }
 });
-$('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>⌄</b>`; updateDockMeta(); toast(`Research depth set to ${depth}.`); });
+$('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>${icon('chevron-down')}</b>`; updateDockMeta(); toast(`Research depth set to ${depth}.`); });
 $('#dockMeta').addEventListener('click', () => document.body.classList.toggle('dock-expanded'));
 $('#prompt').addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); $('#runResearch').click(); }
@@ -209,7 +210,7 @@ async function loadConversations() {
     document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     if (!projects.length) { section.hidden = true; return; }
     section.hidden = false;
-    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></article>`).join('');
+    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); if (!p) return; $('#prompt').value = p.question; renderProject(p); }));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadConversations(); }));
   } catch { section.hidden = true; }
@@ -219,7 +220,7 @@ loadConversations();
 async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { list.innerHTML = '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>'; return; } list.innerHTML = '<span class="visually-hidden">Loading saved research…</span><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div><div aria-hidden="true"><div class="skel" style="height:58px"></div></div>';
   try {
     const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
-    list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
+    list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); loadConversations(); }));
   } catch { list.innerHTML = DEMO ? '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>' : '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
