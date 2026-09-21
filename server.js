@@ -49,6 +49,7 @@ async function executeRun(run) {
     catch (error) { agent.status = 'failed'; agent.error = error.message; agent.completed_at = new Date().toISOString(); return []; }
   });
   const sources = reviewEvidence((await Promise.all(jobs)).flat());
+  if (run.status === 'cancelled') return;
   if (!sources.length) { run.status = 'failed'; run.error = 'No sources could be retrieved. Check your connection or revise the question.'; run.completed_at = new Date().toISOString(); return; }
   const project = { id: run.id, question: run.question, depth: run.depth, sources, brief: await writeBrief(run.question, sources), agents: run.agents, errors: run.agents.filter(agent => agent.status === 'failed').map(agent => `${agent.name}: ${agent.error}`), created_at: run.started_at };
   const projects = await readProjects(); projects.unshift(project); await writeProjects(projects.slice(0, config.maxSavedProjects)); run.result = project; run.status = 'completed'; run.completed_at = new Date().toISOString();
@@ -72,6 +73,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/runs') return send(res, req, started, requestId, 202, await createRun(await readJson(req)));
     if (req.method === 'GET' && /^\/api\/runs\/[0-9a-f-]+$/i.test(url.pathname)) { const run = runs.get(url.pathname.split('/').pop()); return run ? send(res, req, started, requestId, 200, publicRun(run)) : send(res, req, started, requestId, 404, { error: 'Research run not found.' }); }
     if (req.method === 'DELETE' && /^\/api\/projects\/[0-9a-f-]+$/i.test(url.pathname)) { const id = url.pathname.split('/').pop(); await writeProjects((await readProjects()).filter(project => project.id !== id)); return send(res, req, started, requestId, 204, ''); }
+    if (req.method === 'GET' && /^\/api\/projects\/[0-9a-f-]+$/i.test(url.pathname)) { const project = (await readProjects()).find(p => p.id === url.pathname.split('/').pop()); return project ? send(res, req, started, requestId, 200, project) : send(res, req, started, requestId, 404, { error: 'Research not found.' }); }
+    if (req.method === 'DELETE' && /^\/api\/runs\/[0-9a-f-]+$/i.test(url.pathname)) { const run = runs.get(url.pathname.split('/').pop()); if (!run) return send(res, req, started, requestId, 404, { error: 'Research run not found.' }); run.status = 'cancelled'; run.completed_at = new Date().toISOString(); runs.delete(run.id); return send(res, req, started, requestId, 200, { status: 'cancelled' }); }
     if (req.method === 'GET' && /^\/api\/projects\/[0-9a-f-]+\/export$/i.test(url.pathname)) {
       const id = url.pathname.split('/')[3]; const project = (await readProjects()).find(p => p.id === id);
       if (!project) return send(res, req, started, requestId, 404, { error: 'Research not found.' });

@@ -138,10 +138,15 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape') setN
 document.querySelectorAll('.source-toggle').forEach(label => label.addEventListener('click', () => setTimeout(() => { label.classList.toggle('checked', label.querySelector('input').checked); updateDockMeta(); })));
 
 function setRunning(running) {
-  const button = $('#runResearch'); button.disabled = running;
-  button.innerHTML = running ? `Researching ${icon('spark')}` : `Research <span>${icon('send')}</span>`;
+  const button = $('#runResearch'); button.disabled = false;
+  button.innerHTML = running ? `Stop <span>${icon('stop')}</span>` : `Research <span>${icon('send')}</span>`;
+  button.classList.toggle('is-stop', running);
   document.querySelectorAll('.agent-card.active-agent').forEach(card => card.classList.toggle('is-working', running));
 }
+let runActive = false;
+let cancelRequested = false;
+let activeRunId = null;
+let runStartedAt = 0;
 function escapeHtml(value) { const node = document.createElement('span'); node.textContent = value; return node.innerHTML; }
 function icon(name) { return `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 function oaBadge(source) {
@@ -204,10 +209,24 @@ function updateAgents(agents) {
     if (count) { count.textContent = name === 'document-reader' ? 'Private context on hold' : 'Standing by…'; count.title = ''; }
   });
 }
+function citeYear(s) { const m = String(s.published_at || '').match(/\d{4}/); return m ? m[0] : 'n.d.'; }
+function citeAPA(s) {
+  return `${s.publisher || s.source_type}. (${citeYear(s)}). ${s.title}. Retrieved from ${s.url || 'private document'}`;
+}
+function citeBibTeX(s) {
+  const key = `fieldnote${citeYear(s)}${String(s.title || 'untitled').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).slice(0, 3).join('')}`;
+  return `@misc{${key},\n  title = {${s.title || 'Untitled'}},\n  author = {${s.publisher || s.source_type}},\n  year = {${citeYear(s)}},\n  url = {${s.url || ''}}\n}`;
+}
+async function copyCitation(item, format) {
+  if (!item) return;
+  try { await navigator.clipboard.writeText(format === 'bib' ? citeBibTeX(item) : citeAPA(item)); toast(`${format === 'bib' ? 'BibTeX' : 'APA'} citation copied.`); }
+  catch { toast('Could not copy the citation.'); }
+}
 function evidenceArticle(item, index) {
-  return `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`;
+  return `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}<span class="cite-row"><button class="cite-btn" data-cite="apa" data-ev="${index}" title="Copy APA citation">${icon('file')} APA</button><button class="cite-btn" data-cite="bib" data-ev="${index}" title="Copy BibTeX entry">${icon('code')} BibTeX</button></span></div></article>`;
 }
 function renderEvidenceList(items) {
+  lastEvidenceRendered = items;
   const box = $('#evidenceArticles'); if (!box) return;
   box.innerHTML = items.length ? items.map(evidenceArticle).join('') : '<p class="evidence-empty">No evidence of this type in this run.</p>';
   const count = $('#evidenceCount');
@@ -223,6 +242,8 @@ function applyEvidenceView() {
   renderEvidenceList(items);
 }
 let currentProject = null;
+let currentEvidence = [];
+let lastEvidenceRendered = [];
 function renderProject(project) {
   currentProject = project;
   currentEvidence = project.brief.evidence_map || [];
@@ -240,6 +261,7 @@ function renderProject(project) {
   const coverage = project.brief.coverage || {}; const evidence = project.brief.evidence_map || []; const gaps = project.brief.research_gaps || [];
   document.querySelector('.finding-layout').insertAdjacentHTML('afterend', `<section class="report-details"><div class="report-heading"><div><div class="eyebrow"><i></i> RESEARCH NOTES</div><h3>Evidence map & coverage</h3></div><p>Review source excerpts before adopting a claim. Match scores reflect term overlap, not factual correctness.</p><button class="mini-button" id="detailsToggle" aria-expanded="true">Hide details</button></div><div class="coverage-grid"><div><b>${coverage.papers || 0}</b><span>scholarly records</span></div><div><b>${coverage.web || 0}</b><span>web references</span></div><div><b>${coverage.documents || 0}</b><span>private documents</span></div><div><b>${coverage.videos || 0}</b><span>video leads</span></div></div>${(project.brief.takeaways?.length || project.brief.faq?.length) ? `<div class="study-block"><div><h4>Key takeaways</h4>${(project.brief.takeaways || []).map(t => `<p>${escapeHtml(t)}</p>`).join('') || '<p>No takeaways extracted.</p>'}</div><div><h4>Self-test questions</h4>${(project.brief.faq || []).map(f => `<details><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`).join('') || '<p>Enable AI synthesis for generated study questions.</p>'}</div></div>` : ''}<div class="evidence-map"><div><div class="evidence-head"><h4>Most relevant evidence</h4><div class="evidence-tools"><span id="evidenceCount"></span><select id="evidenceFilter" aria-label="Filter evidence by source type"><option value="all">All evidence</option><option value="Paper">Papers</option><option value="Web">Web</option><option value="Video">Videos</option><option value="Document">Documents</option></select><select id="evidenceSort" aria-label="Sort evidence"><option value="relevance">Top relevance</option><option value="newest">Newest first</option><option value="cited">Most cited</option></select></div></div><div class="evidence-articles" id="evidenceArticles"></div></div><div class="gap-list"><h4>What this run cannot answer yet</h4>${gaps.map((gap, index) => `<p>${escapeHtml(gap)}<button class="gap-dig" data-gap="${index}">Dig deeper <span>${icon('arrow-right')}</span></button></p>`).join('')}<h4>Search scope</h4><p>${(coverage.search_terms || []).map(escapeHtml).join(' · ') || 'No extracted terms'}</p></div></div></section>`);
   document.querySelectorAll('.gap-dig').forEach(button => button.addEventListener('click', () => digDeeper(Number(button.dataset.gap))));
+  document.querySelectorAll('.cite-btn').forEach(button => button.addEventListener('click', () => copyCitation(lastEvidenceRendered[Number(button.dataset.ev)], button.dataset.cite)));
   const detailsToggle = $('#detailsToggle');
   if (detailsToggle) detailsToggle.addEventListener('click', () => {
     const section = document.querySelector('.report-details'); if (!section) return;
@@ -254,6 +276,8 @@ function renderProject(project) {
   if (sort) sort.addEventListener('change', applyEvidenceView);
   if (project.errors?.length) toast(`Partial result: ${project.errors[0]}`);
   document.body.classList.remove('working'); document.body.classList.add('has-results');
+  try { history.replaceState(null, '', `#/p/${project.id}`); } catch {}
+  renderChips(project);
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   queueLift();
 }
@@ -268,33 +292,83 @@ async function startRun(question, sources) {
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
   if (!navigator.onLine) return toast('You appear to be offline. Web and paper sources need a connection.');
   updateDockMeta();
+  try { localStorage.setItem('fieldnote.seen', '1'); } catch {}
+  const hint = $('#firstHint'); if (hint) hint.hidden = true;
+  const chips = $('#followChips'); if (chips) chips.hidden = true;
   document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
+  runActive = true; cancelRequested = false; activeRunId = null;
+  runStartedAt = Date.now();
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     showResultLoading();
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
-    while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 1000)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
+    activeRunId = run.id;
+    while (run.status === 'queued' || run.status === 'running') {
+      if (cancelRequested) break;
+      updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 1000)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json();
+    }
+    if (cancelRequested) {
+      try { await fetch(`/api/runs/${run.id}`, { method: 'DELETE' }); } catch {}
+      finishResultLoading(false); $('#statusText').textContent = 'Run cancelled'; document.body.classList.remove('working'); toast('Run cancelled.');
+      return;
+    }
     updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); cacheProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
-  finally { setRunning(false); }
+  finally { runActive = false; activeRunId = null; setRunning(false); }
 }
 
+function projectSources(project) {
+  const sources = [...new Set((project.agents || []).map(a => a.source).filter(s => ['Web', 'Papers', 'YouTube', 'Documents'].includes(s)))];
+  return sources.length ? sources : ['Web', 'Papers'];
+}
 function digDeeper(gapIndex) {
   if (!currentProject) return;
   const gap = (currentProject.brief.research_gaps || [])[gapIndex]; if (!gap) return;
-  const sources = [...new Set((currentProject.agents || []).map(a => a.source).filter(s => ['Web', 'Papers', 'YouTube', 'Documents'].includes(s)))];
   const question = `${gap} [Follow-up research on: ${currentProject.question}]`;
   $('#prompt').value = question;
   toast('Digging deeper into this gap…');
-  startRun(question, sources.length ? sources : ['Web', 'Papers']);
+  startRun(question, projectSources(currentProject));
 }
 
+const FOLLOW_CHIPS = [
+  ['Latest research', q => `${q} recent findings 2024 2025`],
+  ['Opposing views', q => `${q} criticism debate counterarguments`],
+  ['Narrower focus', q => `${q} systematic review meta-analysis`]
+];
+function renderChips(project) {
+  const box = $('#followChips'); if (!box) return;
+  box.innerHTML = FOLLOW_CHIPS.map((c, i) => `<button data-chip="${i}">${escapeHtml(c[0])}</button>`).join('');
+  box.hidden = false;
+  box.querySelectorAll('[data-chip]').forEach(b => b.addEventListener('click', () => {
+    const q = FOLLOW_CHIPS[Number(b.dataset.chip)][1](project.question);
+    $('#prompt').value = q; toast(`Following up: ${FOLLOW_CHIPS[Number(b.dataset.chip)][0]}…`);
+    startRun(q, projectSources(project));
+  }));
+}
+
+async function routeHash() {
+  if (DEMO) return;
+  const m = (location.hash || '').match(/^#\/p\/([0-9a-f-]+)/i);
+  if (!m) return;
+  try {
+    const r = await fetch(`/api/projects/${m[1]}`); if (!r.ok) return;
+    const p = await r.json();
+    $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p);
+  } catch {}
+}
+window.addEventListener('hashchange', routeHash);
+routeHash();
+
 $('#runResearch').addEventListener('click', async () => {
+  if (runActive) {
+    if (Date.now() - runStartedAt < 800) return;
+    cancelRequested = true; toast('Cancelling run…'); return;
+  }
   const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
   startRun(question, sources);
 });
-$('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
+$('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); try { history.replaceState(null, '', location.pathname); } catch {} $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
 $('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.summary-card'); if (!summary) return; summary.scrollIntoView({ behavior: 'smooth', block: 'center' }); summary.classList.remove('flash'); void summary.offsetWidth; summary.classList.add('flash'); setTimeout(() => summary.classList.remove('flash'), 1300); });
 function exportFilename(format) { return currentProject ? `fieldnote-${currentProject.id.slice(0, 8)}.${format}` : null; }
@@ -306,6 +380,11 @@ $('#expCopy').addEventListener('click', async () => {
   if (!guardExport()) return;
   try { await navigator.clipboard.writeText(projectToMarkdown(currentProject)); toast('Brief copied to clipboard.'); }
   catch { toast('Could not copy. Try the Markdown download instead.'); }
+});
+$('#expLink').addEventListener('click', async () => {
+  if (!guardExport()) return;
+  try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}#/p/${currentProject.id}`); toast('Link to this brief copied.'); }
+  catch { toast('Could not copy the link.'); }
 });
 $('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>${icon('chevron-down')}</b>`; updateDockMeta(); toast(`Research depth set to ${depth}.`); });
 $('#dockMeta').addEventListener('click', () => document.body.classList.toggle('dock-expanded'));
@@ -331,7 +410,15 @@ function updateHeaderVisibility() {
   else if (y < lastScrollY - 4 || y <= 140) document.body.classList.remove('nav-hidden');
   lastScrollY = y;
 }
-function queueLift() { if (liftQueued) return; liftQueued = true; requestAnimationFrame(() => { liftQueued = false; liftDock(); updateHeaderVisibility(); }); }
+function queueLift() { if (liftQueued) return; liftQueued = true; requestAnimationFrame(() => { liftQueued = false; liftDock(); updateHeaderVisibility(); updateReadProgress(); }); }
+function updateReadProgress() {
+  const bar = $('#readProgress'); if (!bar) return;
+  const h = document.documentElement;
+  const max = (h.scrollHeight || 0) - (h.clientHeight || 0);
+  const p = max > 0 ? ((h.scrollTop || 0) / max) : 0;
+  const fill = bar.querySelector('i');
+  if (fill && isFinite(p)) fill.style.width = `${Math.round(p * 100)}%`;
+}
 window.addEventListener('scroll', queueLift, { passive: true });
 window.addEventListener('resize', queueLift);
 window.addEventListener('load', queueLift);
@@ -400,19 +487,103 @@ async function loadLibrary() {  const list = $('.library-list'); if (DEMO) { lis
     else list.innerHTML = DEMO ? '<div><b>Static preview.</b><span>Your library lives on the local server — run npm start to browse it.</span></div>' : '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>';
   }
 }
-function renderLibraryList(projects) {
+function renderLibraryList(projects, remember = true) {
   const list = $('.library-list'); if (!list) return;
+  if (remember) lastLibrary = projects;
   const clearBtn = $('#clearLibrary'); if (clearBtn) clearBtn.hidden = !projects.length;
+  renderStats(projects);
   document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
-  list.innerHTML = projects.length ? projects.map((p, i) => `<div class="library-item"><span class="lib-index">${String(i + 1).padStart(2, '0')}</span><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
+  list.innerHTML = projects.length ? projects.map((p, i) => `<div class="library-item"><span class="lib-index">${String(i + 1).padStart(2, '0')}</span><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p._localOnly ? ' · this device' : ''}</span></button><button class="compare-toggle${compareSet.has(p.id) ? ' on' : ''}" data-compare="${p.id}" aria-pressed="${compareSet.has(p.id)}" title="Select to compare">vs</button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
   list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
-  list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); loadLibrary(); loadConversations(); }));
+  list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); compareSet.delete(button.dataset.delete); loadLibrary(); loadConversations(); }));
+  list.querySelectorAll('[data-compare]').forEach(button => button.addEventListener('click', () => {
+    const id = button.dataset.compare;
+    if (compareSet.has(id)) compareSet.delete(id); else if (compareSet.size < 2) compareSet.add(id); else toast('Compare holds two briefs — deselect one first.');
+    renderLibraryList(lastLibrary);
+    if (compareSet.size === 2) openCompare();
+  }));
+  const compareBtn = $('#compareOpen');
+  if (compareBtn) compareBtn.hidden = compareSet.size !== 2;
 }
+let lastLibrary = [];
+const compareSet = new Set();
+function renderStats(projects) {
+  const strip = $('#statsStrip'); if (!strip) return;
+  if (!projects.length) { strip.hidden = true; return; }
+  let sources = 0, papers = 0, oa = 0;
+  projects.forEach(p => (p.sources || []).forEach(s => { sources++; if (s.source_type === 'Paper') papers++; if (s.open_access_url) oa++; }));
+  strip.hidden = false;
+  strip.innerHTML = `<span><b>${projects.length}</b> briefs</span><span><b>${sources}</b> sources</span><span><b>${papers}</b> papers</span><span><b>${oa}</b> open access</span>`;
+}
+$('#libSearch').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  renderLibraryList(q ? lastLibrary.filter(p => p.question.toLowerCase().includes(q)) : lastLibrary, false);
+});
+function compareRow(p) {
+  const b = p.brief || {}; const c = b.coverage || {};
+  return `<div><h4>${escapeHtml(p.question)}</h4><p class="compare-meta">${p.sources.length} sources · ${b.synthesis || 'template'}${p._localOnly ? ' · this device' : ''}</p><div class="compare-counts"><span><b>${c.papers || 0}</b>papers</span><span><b>${c.web || 0}</b>web</span><span><b>${c.videos || 0}</b>video</span><span><b>${c.documents || 0}</b>docs</span></div><h5>Findings</h5>${(b.findings || []).map(f => `<p>${escapeHtml(f)}</p>`).join('')}<h5>Gaps</h5>${(b.research_gaps || []).map(g => `<p>${escapeHtml(g)}</p>`).join('')}</div>`;
+}
+function openCompare() {
+  const pair = [...compareSet].map(id => lastLibrary.find(p => p.id === id)).filter(Boolean);
+  if (pair.length !== 2) return;
+  const grid = $('#compareGrid'); const back = $('#compareBackdrop'); if (!grid || !back) return;
+  grid.innerHTML = pair.map(compareRow).join('');
+  back.hidden = false;
+}
+function closeCompare() { const back = $('#compareBackdrop'); if (back) back.hidden = true; }
+$('#compareOpen').addEventListener('click', openCompare);
+$('#compareClose').addEventListener('click', closeCompare);
+$('#compareBackdrop').addEventListener('click', e => { if (e.target.id === 'compareBackdrop') closeCompare(); });
 
 /* ── Offline shell ── */
 if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const worker = reg.installing; if (!worker) return;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) toast('Update ready — reload to apply it.');
+        });
+      });
+    }).catch(() => {});
+  });
 }
+
+/* ── Install prompt ── */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  const btn = $('#installApp'); if (btn) btn.hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  const btn = $('#installApp'); if (btn) btn.hidden = true;
+  try { localStorage.setItem('fieldnote.seen', '1'); } catch {}
+});
+$('#installApp').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  try { await deferredPrompt.userChoice; } catch {}
+  deferredPrompt = null;
+  $('#installApp').hidden = true;
+});
+
+/* ── First-run hint ── */
+(function firstHint() {
+  let seen = null;
+  try { seen = localStorage.getItem('fieldnote.seen'); } catch {}
+  if (seen || DEMO) return;
+  setTimeout(() => {
+    let stillFresh = true;
+    try { stillFresh = !localStorage.getItem('fieldnote.seen'); } catch {}
+    const hint = $('#firstHint');
+    if (stillFresh && hint) hint.hidden = false;
+  }, 900);
+})();
+$('#firstHint').addEventListener('click', () => {
+  const hint = $('#firstHint'); if (hint) hint.hidden = true;
+  try { localStorage.setItem('fieldnote.seen', '1'); } catch {}
+});
 
 /* ── Command palette (⌘K) ── */
 function paletteItems(projects) {

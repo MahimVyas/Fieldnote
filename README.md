@@ -41,7 +41,9 @@ no `npm install` required.
   citation reachability validation on the AI paths. AI briefs add key
   takeaways and self-test Q&A.
 - **Take it with you** — export any brief as Markdown or JSON, copy it to the
-  clipboard, or print it, straight from the results header.
+  clipboard, or print it, straight from the results header. Every evidence
+  entry carries one-click APA and BibTeX citations, and each brief gets a
+  shareable link.
 - **Installable app** — manifest, generated icons, and an offline-caching
   service worker (app shell only, never the API) make Fieldnote at home on
   phones and desktops.
@@ -146,6 +148,8 @@ on disk: the static file server refuses to serve `data/` and `documents/`.
 | `POST /api/runs` | Start a run: `{ question, sources, depth }` | `202` |
 | `GET /api/runs/:id` | Run status, per-agent progress, final result | `200` |
 | `GET /api/projects` | Saved research archive | `200` |
+| `GET /api/projects/:id` | One saved brief (powers share links) | `200` |
+| `DELETE /api/runs/:id` | Cancel an in-flight run | `200` |
 | `GET /api/projects/:id/export?format=md` | Download brief as Markdown (`format=json` for JSON) | `200` |
 | `DELETE /api/projects/:id` | Delete a saved brief | `204` |
 

@@ -35,6 +35,7 @@
 </head>
 <body>
   <a class="skip-link" href="#researchView">Skip to research</a>
+  <div class="read-progress" id="readProgress" aria-hidden="true"><i></i></div>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.7 5.7 1.9-5.7 1.9L12 18.2l-1.9-5.7L4.4 10.6l5.7-1.9z"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
@@ -55,6 +56,8 @@
     <symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
   </defs></svg>
   <div class="noise"></div>
   <noscript><p style="max-width:640px;margin:40px auto;padding:0 20px;line-height:1.6">Fieldnote is a local-first research workbench: specialist agents gather web, scholarly, video, and private sources into traceable evidence briefs. Enable JavaScript to run research.</p></noscript>
@@ -121,11 +124,13 @@
         <div class="loading-track"><i id="loadingFill"></i></div>
         <div class="loading-steps"><span class="active" data-step="plan">Plan</span><span data-step="gather">Gather evidence</span><span data-step="review">Review sources</span><span data-step="brief">Build brief</span></div>
       </div>
-      <div class="results-head"><div><div class="eyebrow"><i></i> SAMPLE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Markdown</button><button class="mini-button" id="expJson"><svg class="icon" aria-hidden="true"><use href="#i-code"/></svg> JSON</button><button class="mini-button" id="expCopy"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg> Copy</button><button class="mini-button" id="expPrint"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg> Print</button></div><button class="outline-button" id="openBrief">View brief <span><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg></span></button></div></div>
+      <div class="results-head"><div><div class="eyebrow"><i></i> SAMPLE BRIEF</div><h2>A changing, not disappearing, classroom</h2></div><div class="results-actions"><div class="export-row"><button class="mini-button" id="expMd"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Markdown</button><button class="mini-button" id="expJson"><svg class="icon" aria-hidden="true"><use href="#i-code"/></svg> JSON</button><button class="mini-button" id="expCopy"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg> Copy</button><button class="mini-button" id="expPrint"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg> Print</button><button class="mini-button" id="expLink" title="Copy link to this brief"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg> Link</button></div><button class="outline-button" id="openBrief">View brief <span><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg></span></button></div></div>
       <div class="finding-layout">
-        <article class="summary-card"><p class="summary-lead">AI is making high-quality learning more <mark>personal, accessible, and self-directed</mark>—while putting a premium on human guidance and trusted communities.</p><div class="takeaway"><span>01</span><p>Independent educators are using AI to serve smaller niches with curriculum previously only possible at scale.</p></div><div class="takeaway"><span>02</span><p>Evidence suggests the strongest outcomes come from blended, rather than autonomous, learning.</p></div></article>
-        <div class="sources-panel"><div class="panel-title"><span>Evidence collected</span><b>33 sources</b></div><a href="#" class="source"><span class="source-type web-type">WEB</span><div><b>The emerging AI education ecosystem</b><small>MIT Technology Review · 8 min read</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type video-type">VIDEO</span><div><b>What AI tutors get right (and wrong)</b><small>YouTube · Transcript available · 24:18</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type paper-type">PAPER</span><div><b>Generative AI and learning outcomes</b><small>Stanford HAI · 2025</small></div><em>↗</em></a><button class="all-sources">View all sources <span>→</span></button></div>
+        <article class="summary-card" id="briefSummary"><p class="summary-lead">AI is making high-quality learning more <mark>personal, accessible, and self-directed</mark>—while putting a premium on human guidance and trusted communities.</p><div class="takeaway"><span>01</span><p>Independent educators are using AI to serve smaller niches with curriculum previously only possible at scale.</p></div><div class="takeaway"><span>02</span><p>Evidence suggests the strongest outcomes come from blended, rather than autonomous, learning.</p></div></article>
+        <div class="sources-panel" id="briefEvidence"><div class="panel-title"><span>Evidence collected</span><b>33 sources</b></div><a href="#" class="source"><span class="source-type web-type">WEB</span><div><b>The emerging AI education ecosystem</b><small>MIT Technology Review · 8 min read</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type video-type">VIDEO</span><div><b>What AI tutors get right (and wrong)</b><small>YouTube · Transcript available · 24:18</small></div><em>↗</em></a><a href="#" class="source"><span class="source-type paper-type">PAPER</span><div><b>Generative AI and learning outcomes</b><small>Stanford HAI · 2025</small></div><em>↗</em></a><button class="all-sources">View all sources <span>→</span></button></div>
       </div>
+      <nav class="brief-jumps" aria-label="Brief sections"><a href="#briefSummary">Summary</a><a href="#briefEvidence">Evidence</a><a href="#briefGaps">Gaps</a></nav>
+      <div class="chip-row" id="followChips" hidden></div>
     </section>
   </main>
 
@@ -142,16 +147,22 @@
     <section class="architecture"><div><div class="eyebrow"><i></i> HOW IT CONNECTS</div><h2>One question,<br>many careful readers.</h2></div><div class="flow"><div>Prompt</div><i>→</i><div>Planner agent</div><i>→</i><div class="flow-group"><span>Web scout</span><span>Video listener</span><span>Paper trail</span><span>Document reader</span></div><i>→</i><div>Evidence brief</div></div></section>
   </main>
 
-  <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1 tabindex="-1">Research that stays<br><em>useful later.</em></h1><div class="library-toolbar"><button class="mini-button danger" id="clearLibrary" hidden><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Delete all</button></div><div class="library-list"><div><b>Loading saved research…</b></div></div></section></main>
+  <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1 tabindex="-1">Research that stays<br><em>useful later.</em></h1><div class="library-toolbar"><input id="libSearch" type="search" placeholder="Search saved research…" aria-label="Search saved research" /><button class="mini-button" id="compareOpen" hidden>Compare (2)</button><button class="mini-button danger" id="clearLibrary" hidden><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Delete all</button></div><div class="stats-strip" id="statsStrip" hidden></div><div class="library-list"><div><b>Loading saved research…</b></div></div></section></main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <div class="palette-backdrop" id="paletteBackdrop" hidden>
-    <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="modal-backdrop" id="compareBackdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Compare briefs">
+      <div class="modal-head"><h3>Comparing briefs</h3><button class="icon-button" id="compareClose" aria-label="Close comparison"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+      <div class="modal-grid" id="compareGrid"></div>
+    </div>
+  </div>
+  <div class="palette-backdrop" id="paletteBackdrop" hidden>    <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
       <input id="paletteInput" type="text" placeholder="Type a command or search briefs…" aria-label="Command palette" autocomplete="off" />
       <div class="palette-list" id="paletteList" role="listbox"></div>
     </div>
   </div>
-  <footer><span class="foot-brand">fieldnote</span><span class="foot-credit">by <b>Mahim Vyas</b></span><span class="foot-status"><i id="footDot"></i><b id="footText">checking local service…</b></span><span class="foot-note">Local-first · your research never leaves this machine unless you enable web sources</span></footer>
+  <footer><span class="foot-brand">fieldnote</span><span class="foot-credit">by <b>Mahim Vyas</b></span><button class="foot-install" id="installApp" hidden>Install app</button><span class="foot-status"><i id="footDot"></i><b id="footText">checking local service…</b></span><span class="foot-note">Local-first · your research never leaves this machine unless you enable web sources</span></footer>
+  <button class="first-hint" id="firstHint" hidden>Ask anything below — or press ⌘K for commands</button>
   <script src="script.js"></script>
 </body>
 </html>

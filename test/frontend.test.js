@@ -148,6 +148,17 @@ test('evidence dropdown filter narrows articles', () => {
   assert.ok(registry.get('#evidenceCount').textContent.includes('1 of 2'));
 });
 
+test('citation builders format APA and BibTeX', () => {
+  const { sandbox } = loadFrontend();
+  const apa = vm.runInContext(`citeAPA({title:'Deep Work',publisher:'Nature',published_at:'2023-4-2',url:'https://doi.org/10/x',source_type:'Paper'})`, sandbox);
+  assert.equal(apa, 'Nature. (2023). Deep Work. Retrieved from https://doi.org/10/x');
+  const nodate = vm.runInContext(`citeAPA({title:'T',source_type:'Web'})`, sandbox);
+  assert.ok(nodate.includes('(n.d.)'));
+  const bib = vm.runInContext(`citeBibTeX({title:'Deep Work Habits',publisher:'Nature',published_at:'2023',url:'https://doi.org/10/x',source_type:'Paper'})`, sandbox);
+  assert.ok(bib.startsWith('@misc{fieldnote2023'));
+  assert.ok(bib.includes('author = {Nature}'));
+});
+
 test('palette filter matches all terms, ranks prefix hits first', () => {
   const { sandbox } = loadFrontend();
   const items = [
