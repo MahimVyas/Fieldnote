@@ -28,9 +28,11 @@ no `npm install` required.
 ## Features
 
 - **Four specialist agents** — Web Scout (Wikipedia + optional SearXNG),
-  Paper Trail (Crossref + Semantic Scholar + arXiv), Video Listener (live
-  YouTube search), and Document Reader (local `.md`/`.txt` files) run
-  independently and in parallel.
+  Paper Trail (Crossref + Semantic Scholar + arXiv + OpenAlex), Video
+  Listener (live YouTube search), and Document Reader (local `.md`/`.txt`
+  files) run independently and in parallel. **Thorough** depth adds full
+  article extracts, a second query-expansion round, and higher result caps;
+  **Quick** stays fast with single-round snippets.
 - **Evidence reviewer** — deduplicates sources and ranks them by relevance,
   reliability, and citation count before anything is presented.
 - **Traceable briefs** — every brief carries source excerpts, relevance
@@ -87,13 +89,17 @@ Question → Planner → ┌─────────────┐
    specialist tasks.
 2. **Agents** execute concurrently. Web and paper agents query public APIs;
    the video agent parses live YouTube search results; the document agent
-   scores local files by term overlap.
+   scores local files by term overlap. On Thorough depth, the web agent
+   upgrades snippets to full article introductions and the paper agent fires
+   a second round with query terms expanded from round-one titles.
 3. **Evidence reviewer** (`reviewEvidence()`) deduplicates by URL/title and
    sorts by relevance score, reliability tier
    (`scholarly > private > context/record > discovery`), then citations.
 4. **Brief writer** (`writeBrief()`) asks local Ollama for a structured brief
-   over reachability-checked citations, falling back to a deterministic
-   template when Ollama is unavailable.
+   over reachability-checked citations; when Ollama is unavailable it falls
+   back to extractive summarization — top-scoring sentences quoted verbatim
+   from the retrieved excerpts, each traced to its source. The brief header
+   always shows which synthesis produced it.
 5. The run result is persisted atomically to `data/research.json` and served
    back to the UI, which renders the summary, evidence map, and coverage.
 

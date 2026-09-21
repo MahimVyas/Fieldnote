@@ -32,7 +32,7 @@ async function executeRun(run) {
   run.status = 'running'; run.agents.forEach(agent => agent.status = 'queued');
   const jobs = run.plan.map(async (task, index) => {
     const agent = run.agents[index]; agent.status = 'running'; agent.started_at = new Date().toISOString();
-    try { const sources = task.source === 'Documents' ? await task.execute(task.question, config.documentsPath) : await task.execute(task.question); agent.status = 'completed'; agent.sources_found = sources.length; agent.completed_at = new Date().toISOString(); return sources; }
+    try { const sources = await task.execute(task.question, { depth: run.depth, documentsPath: config.documentsPath }); agent.status = 'completed'; agent.sources_found = sources.length; agent.completed_at = new Date().toISOString(); return sources; }
     catch (error) { agent.status = 'failed'; agent.error = error.message; agent.completed_at = new Date().toISOString(); return []; }
   });
   const sources = reviewEvidence((await Promise.all(jobs)).flat());

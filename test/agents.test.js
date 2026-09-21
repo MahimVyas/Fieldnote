@@ -8,7 +8,7 @@ const fs = require('node:fs/promises');
 /* Force the template fallback so brief tests never depend on a local Ollama server. */
 process.env.FIELDNOTE_OLLAMA_URL = 'http://127.0.0.1:1';
 
-const { plan, reviewEvidence, writeBrief, validateCitations, documentReader } = require('../agents');
+const { plan, reviewEvidence, writeBrief, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery } = require('../agents');
 
 test('planner maps every enabled source to a specialist agent', () => {
   const tasks = plan('test question', ['Web', 'Papers', 'YouTube', 'Documents']);
@@ -52,6 +52,44 @@ test('brief reports thin scholarly coverage as a gap', async () => {
   const brief = await writeBrief('test question', [{ title: 'Blog', source_type: 'Web', reliability: 'context' }]);
   assert.match(brief.findings[0], /No scholarly records/);
   assert.match(brief.research_gaps[0], /thin/);
+});
+
+test('OpenAlex inverted index reconstructs to readable text', () => {
+  assert.equal(reconstructAbstract({ quick: [0], brown: [1], fox: [2] }), 'quick brown fox');
+  assert.equal(reconstructAbstract(null), '');
+  assert.equal(reconstructAbstract({}), '');
+});
+
+test('extractive summarizer pulls traceable sentences from excerpts', () => {
+  const sources = [
+    { title: 'Spaced Repetition Study', source_type: 'Paper', reliability: 'scholarly', excerpt: 'Spaced repetition significantly improves long-term retention compared to massed practice. The experiment involved forty undergraduate students over twelve weeks of testing.' },
+    { title: 'Learning Blog', source_type: 'Web', reliability: 'context', excerpt: 'Many learners report that spaced repetition feels harder at first. Over time, however, spaced repetition produces stronger recall than cramming sessions.' },
+    { title: 'Placeholder', source_type: 'Paper', reliability: 'record', excerpt: 'Scholarly record returned by Crossref.' }
+  ];
+  const findings = extractiveFindings('spaced repetition retention recall', sources, 3);
+  assert.equal(findings.length, 3);
+  assert.ok(findings.every(f => f.includes('—')));
+  assert.ok(findings.some(f => f.includes('Spaced Repetition Study')));
+  assert.ok(!findings.some(f => f.includes('Placeholder')));
+});
+
+test('extractive summarizer skips placeholder excerpts', () => {
+  assert.deepEqual(extractiveFindings('anything here', [{ title: 'P', excerpt: 'Scholarly record returned by arXiv.' }]), []);
+});
+
+test('query expansion adds salient title terms', () => {
+  const sources = [{ title: 'Spaced repetition and retention intervals' }, { title: 'Retention intervals in classroom practice' }];
+  const expanded = expandQuery('spaced repetition retention', sources);
+  assert.ok(expanded.includes('intervals'));
+  assert.deepEqual(expandQuery('spaced repetition', []), null);
+});
+
+test('brief with real excerpts uses extractive synthesis', async () => {
+  const brief = await writeBrief('spaced repetition retention', [
+    { title: 'Spaced Repetition Study', source_type: 'Paper', reliability: 'scholarly', relevance: { score: 80, terms: [] }, excerpt: 'Spaced repetition significantly improves long-term retention compared to massed practice in this study.' }
+  ]);
+  assert.equal(brief.synthesis, 'extractive');
+  assert.ok(brief.findings[0].includes('—'));
 });
 
 test('document reader matches local files and ignores other extensions', async () => {

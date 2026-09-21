@@ -9,7 +9,7 @@ function paintTheme(theme) {
   toggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
   toggle.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
   const meta = $('#themeColor');
-  if (meta) meta.content = dark ? '#161513' : '#f5f1e8';
+  if (meta) meta.content = dark ? '#131210' : '#f5f1e8';
 }
 $('#themeToggle').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -74,6 +74,8 @@ function renderProject(project) {
   $('#webCount').textContent = `${byType('Web')} sources found`; $('#videoCount').textContent = `${byType('Video')} video query ready`; $('#paperCount').textContent = `${byType('Paper')} papers indexed`; const docCount = $('#docCount'); if (docCount) docCount.textContent = `${byType('Document')} documents matched`;
   $('.results h2').textContent = project.question;
   document.querySelector('.summary-card').innerHTML = `<p class="summary-lead">${escapeHtml(project.brief.opening)}</p>${project.brief.findings.map((finding, index) => `<div class="takeaway"><span>0${index + 1}</span><p>${escapeHtml(finding)}</p></div>`).join('')}<p class="brief-caveat">${escapeHtml(project.brief.caveat)}</p>`;
+  const synthNote = project.brief.synthesis === 'llm' ? 'AI-synthesized with a local model · citations checked' : project.brief.synthesis === 'extractive' ? 'Auto-summarized from retrieved excerpts' : 'Template summary · enable Ollama for AI synthesis';
+  document.querySelector('.summary-card').insertAdjacentHTML('afterbegin', `<p class="synth-note">${escapeHtml(synthNote)}</p>`);
   document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>Evidence collected</span><b>${sources.length} sources</b></div>${sources.slice(0, 6).map(sourceHtml).join('')}<button class="all-sources" id="allSources">View all ${sources.length} sources <span>→</span></button>`;
   $('#allSources').addEventListener('click', () => { document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>All evidence</span><b>${sources.length} sources</b></div>${sources.map(sourceHtml).join('')}`; });
   document.querySelector('.report-details')?.remove();
@@ -93,7 +95,7 @@ $('#runResearch').addEventListener('click', async () => {
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
     while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 700)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
-    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); toast('Evidence brief saved to your library.');
+    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; toast(error.message); }
   finally { setRunning(false); }
 });
@@ -102,9 +104,18 @@ $('#connectDocs').addEventListener('click', () => toast('Document ingestion is t
 $('#openBrief').addEventListener('click', () => $('#results').scrollIntoView({ behavior: 'smooth' }));
 $('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>⌄</b>`; toast(`Research depth set to ${depth}.`); });
 
+async function refreshLibraryCount() {
+  try {
+    const response = await fetch('/api/projects'); if (!response.ok) return;
+    const projects = await response.json();
+    document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
+  } catch {}
+}
+refreshLibraryCount();
+
 async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<div><b>Loading saved research…</b></div>';
   try {
-    const response = await fetch('/api/projects'); const projects = await response.json(); $('.count').textContent = projects.length;
+    const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); }));
