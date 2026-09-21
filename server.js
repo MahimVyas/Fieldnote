@@ -41,6 +41,27 @@ async function writeProjects(projects) { await fs.mkdir(path.dirname(config.data
 async function readJson(req) { let raw = ''; for await (const chunk of req) { raw += chunk; if (raw.length > 32_000) throw new Error('Request body is too large.'); } try { return raw ? JSON.parse(raw) : {}; } catch { throw new Error('Request body must be valid JSON.'); } }
 function publicRun(run) { const { question, depth, agents, status, started_at, completed_at, result, error } = run; return { id: run.id, question, depth, agents, status, started_at, completed_at, result, error }; }
 
+let aiProbe = { at: 0, value: { engine: 'extractive', detail: 'local summarizer' } };
+async function aiStatus() {
+  if (Date.now() - aiProbe.at < 300_000) return aiProbe.value;
+  let value = { engine: 'extractive', detail: 'local summarizer' };
+  try {
+    if (process.env.FIELDNOTE_OPENROUTER_API_KEY) {
+      value = { engine: 'openrouter', detail: process.env.FIELDNOTE_OPENROUTER_MODEL || 'openai/gpt-4o-mini' };
+    } else {
+      const ollamaUrl = process.env.FIELDNOTE_OLLAMA_URL || 'http://localhost:11434';
+      const ollamaUp = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) }).then(r => r.ok).catch(() => false);
+      if (ollamaUp) value = { engine: 'ollama', detail: ollamaUrl };
+      else {
+        const freeUp = await fetch('https://text.pollinations.ai/models', { signal: AbortSignal.timeout(5000) }).then(r => r.ok).catch(() => false);
+        if (freeUp) value = { engine: 'pollinations', detail: 'keyless free tier' };
+      }
+    }
+  } catch {}
+  aiProbe = { at: Date.now(), value };
+  return value;
+}
+
 async function executeRun(run) {
   run.status = 'running'; run.agents.forEach(agent => agent.status = 'queued');
   const jobs = run.plan.map(async (task, index) => {
@@ -68,7 +89,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (url.pathname === '/favicon.ico') return send(res, req, started, requestId, 200, await fs.readFile(path.join(root, 'favicon.svg')), types['.svg']);
     if (req.method !== 'GET' && url.pathname.startsWith('/api/') && rateLimited(req)) return send(res, req, started, requestId, 429, { error: 'Too many requests. Please retry in a minute.' });
-    if (req.method === 'GET' && url.pathname === '/api/health') return send(res, req, started, requestId, 200, { status: 'ok', service: 'fieldnote', version, uptime_seconds: Math.floor((Date.now() - startedAt) / 1000), active_runs: [...runs.values()].filter(run => run.status === 'running' || run.status === 'queued').length });
+    if (req.method === 'GET' && url.pathname === '/api/health') { const ai = await aiStatus(); return send(res, req, started, requestId, 200, { status: 'ok', service: 'fieldnote', version, uptime_seconds: Math.floor((Date.now() - startedAt) / 1000), ai: ai.engine, ai_detail: ai.detail, active_runs: [...runs.values()].filter(run => run.status === 'running' || run.status === 'queued').length }); }
     if (req.method === 'GET' && url.pathname === '/api/projects') return send(res, req, started, requestId, 200, await readProjects());
     if (req.method === 'POST' && url.pathname === '/api/runs') return send(res, req, started, requestId, 202, await createRun(await readJson(req)));
     if (req.method === 'GET' && /^\/api\/runs\/[0-9a-f-]+$/i.test(url.pathname)) { const run = runs.get(url.pathname.split('/').pop()); return run ? send(res, req, started, requestId, 200, publicRun(run)) : send(res, req, started, requestId, 404, { error: 'Research run not found.' }); }

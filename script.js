@@ -683,6 +683,6 @@ document.addEventListener('keydown', e => {
     const response = await fetch('/api/health'); if (!response.ok) throw new Error('unhealthy');
     const health = await response.json();
     document.querySelector('.foot-status').classList.add('online');
-    text.textContent = `local service online · v${health.version || '?'} · ${health.active_runs || 0} active runs`;
+    text.textContent = `local service online · v${health.version || '?'} · AI ${health.ai || 'extractive'} · ${health.active_runs || 0} active runs`;
   } catch { text.textContent = 'local service unreachable — start it with npm start'; }
 })();
