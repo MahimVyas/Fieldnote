@@ -65,13 +65,13 @@ function sourceHtml(source) {
   return source.url ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source">${body}</a>` : `<div class="source source-local">${body}</div>`;
 }
 function updateAgents(agents) {
-  const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'] };
-  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
+  const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'], 'document-reader': ['#docCount', '.agent-card:nth-child(4)'] };
+  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
 }
 function renderProject(project) {
   const sources = project.sources || []; const byType = type => sources.filter(s => s.source_type === type).length;
   $('#statusText').textContent = `${sources.length} sources collected`;
-  $('#webCount').textContent = `${byType('Web')} sources found`; $('#videoCount').textContent = `${byType('Video')} video query ready`; $('#paperCount').textContent = `${byType('Paper')} papers indexed`;
+  $('#webCount').textContent = `${byType('Web')} sources found`; $('#videoCount').textContent = `${byType('Video')} video query ready`; $('#paperCount').textContent = `${byType('Paper')} papers indexed`; const docCount = $('#docCount'); if (docCount) docCount.textContent = `${byType('Document')} documents matched`;
   $('.results h2').textContent = project.question;
   document.querySelector('.summary-card').innerHTML = `<p class="summary-lead">${escapeHtml(project.brief.opening)}</p>${project.brief.findings.map((finding, index) => `<div class="takeaway"><span>0${index + 1}</span><p>${escapeHtml(finding)}</p></div>`).join('')}<p class="brief-caveat">${escapeHtml(project.brief.caveat)}</p>`;
   document.querySelector('.sources-panel').innerHTML = `<div class="panel-title"><span>Evidence collected</span><b>${sources.length} sources</b></div>${sources.slice(0, 6).map(sourceHtml).join('')}<button class="all-sources" id="allSources">View all ${sources.length} sources <span>→</span></button>`;
@@ -86,6 +86,7 @@ function renderProject(project) {
 $('#runResearch').addEventListener('click', async () => {
   const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
   if (!question) return toast('Add a question to begin your research.'); if (!sources.length) return toast('Select at least one online source.');
+  if (!navigator.onLine) return toast('You appear to be offline. Web and paper sources need a connection.');
   setRunning(true); $('#statusText').textContent = 'Agents are retrieving evidence'; $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     showResultLoading();
@@ -101,8 +102,7 @@ $('#connectDocs').addEventListener('click', () => toast('Document ingestion is t
 $('#openBrief').addEventListener('click', () => $('#results').scrollIntoView({ behavior: 'smooth' }));
 $('#depthButton').addEventListener('click', () => { depth = depth === 'Thorough' ? 'Quick' : 'Thorough'; $('#depthButton').innerHTML = `${depth} <b>⌄</b>`; toast(`Research depth set to ${depth}.`); });
 
-async function loadLibrary() {
-  const list = $('.library-list'); list.innerHTML = '<div><b>Loading saved research…</b></div>';
+async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<div><b>Loading saved research…</b></div>';
   try {
     const response = await fetch('/api/projects'); const projects = await response.json(); $('.count').textContent = projects.length;
     list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
@@ -110,3 +110,13 @@ async function loadLibrary() {
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); }));
   } catch { list.innerHTML = '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
 }
+
+(async function serviceStatus() {
+  const dot = $('#footDot'); const text = $('#footText'); if (!dot || !text) return;
+  try {
+    const response = await fetch('/api/health'); if (!response.ok) throw new Error('unhealthy');
+    const health = await response.json();
+    document.querySelector('.foot-status').classList.add('online');
+    text.textContent = `local service online · v${health.version || '?'} · ${health.active_runs || 0} active runs`;
+  } catch { text.textContent = 'local service unreachable — start it with npm start'; }
+})();

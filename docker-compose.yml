@@ -1,0 +1,16 @@
+services:
+  fieldnote:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - fieldnote-data:/var/lib/fieldnote
+    environment:
+      PORT: "3000"
+      FIELDNOTE_DATA_PATH: /var/lib/fieldnote/research.json
+      FIELDNOTE_DOCUMENTS_PATH: /var/lib/fieldnote/documents
+      # FIELDNOTE_SEARX_URL: https://searx.be
+    restart: unless-stopped
+
+volumes:
+  fieldnote-data:

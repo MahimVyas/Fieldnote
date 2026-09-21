@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fieldnote — research, assembled</title>
+  <meta name="description" content="Fieldnote is a local-first, multi-agent evidence research workbench. Ask a question; get a traceable, caveated evidence brief." />
+  <meta property="og:title" content="Fieldnote — research, assembled" />
+  <meta property="og:description" content="A local-first, multi-agent evidence research workbench. No API key required." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -12,6 +17,7 @@
   <script>try{var t=localStorage.getItem('fieldnote-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}</script>
 </head>
 <body>
+  <a class="skip-link" href="#researchView">Skip to research</a>
   <div class="noise"></div>
   <header>
     <a class="brand" href="#"><span class="brand-mark">f</span><span>fieldnote</span></a>
@@ -45,7 +51,7 @@
         <label class="source-toggle checked"><input type="checkbox" checked data-source="YouTube"><span></span> YouTube</label>
         <label class="source-toggle checked"><input type="checkbox" checked data-source="Papers"><span></span> Papers</label>
         <label class="source-toggle"><input type="checkbox" data-source="Documents"><span></span> My documents</label>
-        <div class="depth-select"><span>Depth</span><button id="depthButton">Thorough <b>⌄</b></button></div>
+        <div class="depth-select"><span>Depth</span><button id="depthButton" aria-label="Toggle research depth">Thorough <b>⌄</b></button></div>
       </div>
     </section>
 
@@ -58,7 +64,7 @@
         <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot web">⌘</span><span class="agent-state">SEARCHING</span></div><h3>Web scout</h3><p>Finding reporting, primary sources, and opposing views.</p><div class="progress"><i style="width:72%"></i></div><small id="webCount">18 sources found</small></article>
         <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot video">▶</span><span class="agent-state">WATCHING</span></div><h3>Video listener</h3><p>Reading transcripts and key moments from YouTube.</p><div class="progress"><i style="width:48%"></i></div><small id="videoCount">6 videos queued</small></article>
         <article class="agent-card active-agent"><div class="agent-top"><span class="agent-dot paper">⌁</span><span class="agent-state">READING</span></div><h3>Paper trail</h3><p>Looking through research, data, and citations.</p><div class="progress"><i style="width:88%"></i></div><small id="paperCount">9 papers indexed</small></article>
-        <article class="agent-card"><div class="agent-top"><span class="agent-dot doc">▤</span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span>→</span></button></article>
+        <article class="agent-card"><div class="agent-top"><span class="agent-dot doc">▤</span><span class="agent-state muted">ON HOLD</span></div><h3>Document reader</h3><p>Connect a folder to include your private context.</p><button class="connect-btn" id="connectDocs">Connect files <span>→</span></button><small id="docCount">Private context on hold</small></article>
       </div>
     </section>
 
@@ -79,11 +85,11 @@
   <main id="stackView" hidden>
     <section class="stack-hero"><div class="eyebrow"><i></i> NO PAYWALL REQUIRED</div><h1>Built to be yours.<br><em>Built with open tools.</em></h1><p>Every layer of Fieldnote can run locally or on free tiers. Use hosted services when convenient, swap them out when you're ready.</p></section>
     <section class="stack-grid">
-      <article><span>01</span><h3>Research agents</h3><p>LangGraph coordinates specialized agents with Ollama running local open-weight models like Llama 3.1 or Qwen.</p><code>LangGraph · Ollama · Qwen</code></article>
-      <article><span>02</span><h3>Web & paper search</h3><p>SearXNG searches the open web privately. arXiv, Crossref, and Semantic Scholar provide free scholarly metadata.</p><code>SearXNG · arXiv · Crossref</code></article>
-      <article><span>03</span><h3>YouTube intelligence</h3><p>yt-dlp discovers videos and youtube-transcript-api retrieves captions where creators make them available.</p><code>yt-dlp · transcript-api</code></article>
-      <article><span>04</span><h3>Your documents</h3><p>Apache Tika extracts text from local files. Chroma stores searchable embeddings on your own machine.</p><code>Tika · Chroma · SQLite</code></article>
-      <article><span>05</span><h3>Interface</h3><p>A simple Next.js interface, deployed for free on Cloudflare Pages or run entirely on localhost.</p><code>Next.js · Tailwind · Cloudflare</code></article>
+      <article><span>01</span><h3>Research agents</h3><p>Four specialist agents run in parallel over independent sources, then an evidence reviewer deduplicates and ranks everything before the brief is written.</p><code>planner · reviewer · brief writer</code></article>
+      <article><span>02</span><h3>Web & paper search</h3><p>Wikipedia and an optional SearXNG instance cover the open web. Crossref, Semantic Scholar, and arXiv provide free scholarly metadata.</p><code>SearXNG · arXiv · Crossref</code></article>
+      <article><span>03</span><h3>YouTube intelligence</h3><p>Live YouTube search surfaces real watch links for every question, so video leads stay current instead of canned.</p><code>youtube search · watch links</code></article>
+      <article><span>04</span><h3>Your documents</h3><p>Local <code>.md</code> and <code>.txt</code> files are matched against your question on your own machine. Private material never leaves the deployment.</p><code>local files · offline matching</code></article>
+      <article><span>05</span><h3>Interface</h3><p>A dependency-free page served by the same Node process — dark mode, live agent progress, evidence map, and a saved-research library included.</p><code>Node.js · vanilla UI · Docker</code></article>
       <article class="stack-note"><span>THE PRINCIPLE</span><h3>Free means portable.</h3><p>No required API keys. No source data is sold. The workflow stays useful even completely offline once your local library is indexed.</p></article>
     </section>
     <section class="architecture"><div><div class="eyebrow"><i></i> HOW IT CONNECTS</div><h2>One question,<br>many careful readers.</h2></div><div class="flow"><div>Prompt</div><i>→</i><div>Planner agent</div><i>→</i><div class="flow-group"><span>Web scout</span><span>Video listener</span><span>Paper trail</span><span>Document reader</span></div><i>→</i><div>Evidence brief</div></div></section>
@@ -91,7 +97,8 @@
 
   <main id="libraryView" hidden><section class="library"><div class="eyebrow"><i></i> YOUR ARCHIVE</div><h1>Research that stays<br><em>useful later.</em></h1><div class="library-list"><div><b>How is AI changing the future of independent education?</b><span>33 sources · Today</span></div><div><b>Community-owned social networks</b><span>18 sources · Sep 18</span></div><div><b>The next generation of urban mobility</b><span>42 sources · Sep 12</span></div></div></section></main>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <footer><span class="foot-brand">fieldnote</span><span class="foot-status"><i id="footDot"></i><b id="footText">checking local service…</b></span><span class="foot-note">Local-first · your research never leaves this machine unless you enable web sources</span></footer>
   <script src="script.js"></script>
 </body>
 </html>
