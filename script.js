@@ -91,8 +91,6 @@ function setResultProgress(percent, label, step) {
   $('#loadingFill').style.width = `${visibleProgress}%`;
   $('#loadingPercent').textContent = `${visibleProgress}%`;
   $('#loadingLabel').textContent = label;
-  const stripText = $('#stripText'); if (stripText) stripText.textContent = label;
-  const stripFill = $('#stripFill'); if (stripFill) stripFill.style.width = `${visibleProgress}%`;
   document.querySelectorAll('.loading-steps span').forEach(item => item.classList.toggle('active', item.dataset.step === step));
 }
 function showResultLoading() {
@@ -153,7 +151,7 @@ function sourceHtml(source) {
 }
 function updateAgents(agents) {
   const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'], 'document-reader': ['#docCount', '.agent-card:nth-child(4)'] };
-  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); const dot = document.querySelector(`[data-strip="${agent.name}"]`); if (dot) dot.className = agent.status; });
+  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
 }
 let currentProject = null;
 function renderProject(project) {
