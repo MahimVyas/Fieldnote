@@ -69,7 +69,7 @@ footer{margin-top:auto}
 .summary-card.flash{animation:brief-flash 1.2s ease;border-radius:8px}
 @keyframes brief-flash{30%{box-shadow:0 0 0 3px rgba(237,89,57,.45)}}
 /* ── Chat layout: always-on bottom bar + home conversations ── */
-body{padding-bottom:0}
+body{padding-bottom:24px}
 .search-card{position:fixed;left:12px;right:12px;bottom:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:8;margin:0 auto;max-width:1010px;border-radius:26px;border:14px solid transparent;background:var(--paper);background:color-mix(in srgb, var(--paper) 62%, transparent);background-clip:padding-box;-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);box-shadow:inset 0 0 0 1px var(--line),0 18px 44px rgba(37,31,20,.16),0 4px 14px rgba(37,31,20,.08);isolation:isolate}
 
 .search-card .research-options{display:none}
@@ -86,7 +86,7 @@ body.dock-expanded .search-card .research-options{display:flex}
 .conversation-card button[data-open] b{display:-webkit-box;font-size:15px;font-weight:600;line-height:1.4;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .conversation-card button[data-open] span{display:block;font:11px 'DM Mono';color:var(--muted);margin-top:4px}
 [data-theme="dark"] .search-card{box-shadow:inset 0 0 0 1px var(--line),0 18px 44px rgba(0,0,0,.45),0 4px 14px rgba(0,0,0,.35)}
-@media(max-width:760px){.conversations{margin:0 12px 52px}body{padding-bottom:0}.toast{bottom:220px;bottom:calc(220px + env(safe-area-inset-bottom))}}
+@media(max-width:760px){.conversations{margin:0 12px 52px}body{padding-bottom:24px}.toast{bottom:220px;bottom:calc(220px + env(safe-area-inset-bottom))}}
 /* ── Working mode: docked prompt, condensed status, quiet page ── */
 
 .dock-meta{display:none;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 21px;font:500 10px 'DM Mono';letter-spacing:.6px;color:var(--muted);cursor:pointer;text-align:left;text-transform:uppercase}
