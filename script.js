@@ -64,6 +64,8 @@ const SAMPLE_QUESTIONS = [
 ];
 promptEl.value = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
 autogrow();
+window.addEventListener('load', autogrow);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(autogrow);
 
 function paintTheme(theme) {
   document.documentElement.dataset.theme = theme;

@@ -174,7 +174,7 @@ nav{gap:12px}
 }
 /* ── Micro-interactions, honesty states, a11y ── */
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-textarea{max-height:160px;overflow-y:auto}
+textarea{max-height:160px;min-height:64px;overflow-y:auto}
 .run-button,.new-button,.outline-button,.mini-button,.theme-toggle{transition:transform .12s ease,background-color .2s ease,color .2s ease,border-color .2s ease}
 .run-button:active,.new-button:active,.outline-button:active,.mini-button:active{transform:scale(.96)}
 .agent-card,.stack-grid article,.conversation-card{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
