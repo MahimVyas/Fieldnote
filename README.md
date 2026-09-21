@@ -37,9 +37,10 @@ no `npm install` required.
   reliability, and citation count before anything is presented.
 - **Traceable briefs** — every brief carries source excerpts, relevance
   signals, reliability labels, coverage metrics, an evidence map, and research
-  gaps. Synthesis runs OpenRouter → local Ollama → extractive fallback, with
-  citation reachability validation on the AI paths. AI briefs add key
-  takeaways and self-test Q&A.
+  gaps. Synthesis runs OpenRouter → local Ollama → keyless free tier →
+  extractive fallback, with citation reachability validation on the AI paths.
+  AI briefs add key takeaways and self-test Q&A. (The keyless fallback only
+  ever receives already-public excerpts.)
 - **Take it with you** — export any brief as Markdown or JSON, copy it to the
   clipboard, or print it, straight from the results header. Every evidence
   entry carries one-click APA and BibTeX citations, and each brief gets a
@@ -135,6 +136,7 @@ Question → Planner → ┌─────────────┐
 | `FIELDNOTE_OLLAMA_URL` | `http://localhost:11434` | Ollama server for LLM brief synthesis. Unreachable → template fallback. |
 | `FIELDNOTE_OPENROUTER_API_KEY` | _(empty)_ | OpenRouter key for cloud AI synthesis (takes priority). Keep in local `.env`, never committed. |
 | `FIELDNOTE_OPENROUTER_MODEL` | `openai/gpt-4o-mini` | Model used for OpenRouter synthesis and study aids. Free `:free` models work but carry a 50 req/day limit. |
+| `FIELDNOTE_AI` | _(unset)_ | Set to `off` to disable all AI providers (OpenRouter, Ollama, keyless) and always use local extractive summarization. |
 | `NODE_ENV` | _(empty)_ | Set to `production` in the container. |
 
 Copy `.env.example` to `.env` for local customization. Private documents stay

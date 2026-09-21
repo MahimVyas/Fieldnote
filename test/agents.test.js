@@ -5,8 +5,11 @@ const os = require('node:os');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 
-/* Force the template fallback so brief tests never depend on a local Ollama server. */
+/* Force deterministic offline briefs: no OpenRouter key here, Ollama pointed
+   at a dead port, and AI providers disabled entirely. */
+delete process.env.FIELDNOTE_OPENROUTER_API_KEY;
 process.env.FIELDNOTE_OLLAMA_URL = 'http://127.0.0.1:1';
+process.env.FIELDNOTE_AI = 'off';
 
 const { plan, reviewEvidence, writeBrief, validateCitations, documentReader, reconstructAbstract, extractiveFindings, expandQuery } = require('../agents');
 
@@ -58,6 +61,13 @@ test('OpenAlex inverted index reconstructs to readable text', () => {
   assert.equal(reconstructAbstract({ quick: [0], brown: [1], fox: [2] }), 'quick brown fox');
   assert.equal(reconstructAbstract(null), '');
   assert.equal(reconstructAbstract({}), '');
+});
+
+test('JSON extractor tolerates fences and trailing prose', () => {
+  const { extractJson } = require('../agents');
+  assert.deepEqual(extractJson('```json\n{"a": 1, "t": "x { y } \\"q\\""}\n```\nsome trailing [ prose'), { a: 1, t: 'x { y } "q"' });
+  assert.throws(() => extractJson('no json here'), /No JSON/);
+  assert.throws(() => extractJson('{"a": 1'), /Unbalanced/);
 });
 
 test('extractive summarizer pulls traceable sentences from excerpts', () => {
