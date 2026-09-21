@@ -118,7 +118,7 @@ Question → Planner → ┌─────────────┐
 | `FIELDNOTE_SEARX_URL` | _(empty)_ | Base URL of a SearXNG instance for open-web results. |
 | `FIELDNOTE_OLLAMA_URL` | `http://localhost:11434` | Ollama server for LLM brief synthesis. Unreachable → template fallback. |
 | `FIELDNOTE_OPENROUTER_API_KEY` | _(empty)_ | OpenRouter key for cloud AI synthesis (takes priority). Keep in local `.env`, never committed. |
-| `FIELDNOTE_OPENROUTER_MODEL` | `openai/gpt-4o-mini` | Model used for OpenRouter synthesis and study aids. |
+| `FIELDNOTE_OPENROUTER_MODEL` | `openai/gpt-4o-mini` | Model used for OpenRouter synthesis and study aids. Free `:free` models work but carry a 50 req/day limit. |
 | `NODE_ENV` | _(empty)_ | Set to `production` in the container. |
 
 Copy `.env.example` to `.env` for local customization. Private documents stay

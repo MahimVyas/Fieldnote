@@ -260,12 +260,19 @@ async function synthesizeWithOpenRouter(question, sources) {
   const top = reachable.map(s => `[${s.source_type}] ${s.title} (${s.reliability})${s.excerpt ? ' — ' + s.excerpt.slice(0, 300) : ''}${s.url ? ' — ' + s.url : ''}`).join('\n');
   const prompt = [`You are an evidence reviewer producing NotebookLM-style study material. Read these sources and produce a traceable, caveated evidence brief plus study aids. Do not fabricate or infer anything beyond what the sources state.`, ``, `Question: ${question}`, ``, `Sources (${sources.length} total, ${reachable.length} reachable):\n${top}`, ``, AI_BRIEF_FIELDS].join('\n');
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST', signal: AbortSignal.timeout(45000),
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'Fieldnote' },
-      body: JSON.stringify({ model, temperature: 0.2, max_tokens: 2500, messages: [{ role: 'user', content: prompt }] })
-    });
-    if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
+    const waits = [0, 8000, 20000];
+    let response = null; let lastStatus = 0;
+    for (const wait of waits) {
+      if (wait) await new Promise(resolve => setTimeout(resolve, wait));
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST', signal: AbortSignal.timeout(60000),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'Fieldnote' },
+        body: JSON.stringify({ model, temperature: 0.2, max_tokens: 2500, messages: [{ role: 'user', content: prompt }] })
+      });
+      lastStatus = response.status;
+      if (response.status !== 429) break;
+    }
+    if (!response.ok) throw new Error(`OpenRouter returned ${lastStatus}`);
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '';
     return parseAiBrief(raw, question, sources, 'openrouter', { model, citations_validated: reachable.length, citations_unreachable: validated.length - reachable.length });
