@@ -123,6 +123,15 @@ test('client download creates a named blob anchor', () => {
   assert.equal(anchor.href, 'blob:test');
 });
 
+test('evidence dropdown filter narrows articles', () => {
+  const { sandbox, registry } = loadFrontend();
+  vm.runInContext(`currentEvidence = [{title:'Paper A',source_type:'Paper',reliability:'scholarly',relevance:90,excerpt:'E'},{title:'Blog B',source_type:'Web',reliability:'context',relevance:70,excerpt:'E2'}]; renderEvidenceList(currentEvidence.filter(i => i.source_type === 'Paper'));`, sandbox);
+  const html = registry.get('#evidenceArticles').innerHTML;
+  assert.ok(html.includes('Paper A'));
+  assert.ok(!html.includes('Blog B'));
+  assert.ok(registry.get('#evidenceCount').textContent.includes('1 of 2'));
+});
+
 test('palette filter matches all terms, ranks prefix hits first', () => {
   const { sandbox } = loadFrontend();
   const items = [
