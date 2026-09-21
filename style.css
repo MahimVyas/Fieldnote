@@ -61,6 +61,25 @@ footer{margin-top:auto}
 .synth-note{font:500 10px 'DM Mono';letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin:0 0 14px}
 .oa-badge{display:inline-block;margin-top:8px;font:600 10px 'DM Mono';letter-spacing:.4px;color:var(--green);border:1px solid currentColor;border-radius:4px;padding:3px 7px;text-decoration:none}
 .oa-badge:hover{background:var(--green);color:#fff;border-color:var(--green)}
+span.oa-badge{cursor:pointer}
+/* ── Chat layout: always-on bottom bar + home conversations ── */
+body{padding-bottom:200px}
+.search-card{position:fixed;left:12px;right:12px;bottom:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:8;margin:0 auto;max-width:1010px;border-radius:14px;box-shadow:0 18px 44px rgba(37,31,20,.18)}
+.search-card .research-options{display:none}
+body.dock-expanded .search-card .research-options{display:flex}
+.search-card .dock-meta{display:block}
+.toast{bottom:200px;bottom:calc(200px + env(safe-area-inset-bottom))}
+.conversations{max-width:1010px;margin:0 auto 70px}
+.conversations-head{max-width:1010px;margin:0 auto 18px}
+.conversations-head h2{font:600 28px 'Playfair Display';letter-spacing:-1px;margin:9px 0 0}
+.conversation-list{display:grid;gap:10px}
+.conversation-card{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 16px}
+.conversation-card:hover{border-color:var(--orange)}
+.conversation-card button[data-open]{flex:1;min-width:0;background:none;border:0;text-align:left;cursor:pointer;color:var(--ink);padding:10px 0}
+.conversation-card button[data-open] b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conversation-card button[data-open] span{display:block;font:11px 'DM Mono';color:var(--muted);margin-top:4px}
+[data-theme="dark"] .search-card{box-shadow:0 18px 44px rgba(0,0,0,.5)}
+@media(max-width:760px){.conversations{margin:0 12px 52px}body{padding-bottom:220px}.toast{bottom:220px;bottom:calc(220px + env(safe-area-inset-bottom))}}
 /* ── Working mode: docked prompt, condensed status, quiet page ── */
 .search-card:focus-within{border-color:var(--orange)}
 .dock-meta{display:none;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 21px;font:500 10px 'DM Mono';letter-spacing:.6px;color:var(--muted);cursor:pointer;text-align:left;text-transform:uppercase}
@@ -80,12 +99,7 @@ body.working .hero{display:none}
 body.working .workspace-head,body.working .agent-grid{display:none}
 body.working .work-strip{display:flex;position:sticky;top:85px;z-index:3;box-shadow:0 10px 26px rgba(37,31,20,.1)}
 body.working .finding-layout,body.working .report-details{display:none}
-body.working .search-card,body.has-results .search-card{position:sticky;bottom:12px;z-index:6;margin-bottom:24px;box-shadow:0 18px 44px rgba(37,31,20,.16)}
-body.working .research-options,body.has-results .research-options{display:none}
-body.working .dock-meta,body.has-results .dock-meta{display:block}
-body.has-results.dock-expanded .research-options{display:flex}
-body.working .results{padding-bottom:150px}
-@media(max-width:760px){.work-strip{margin:0 0 16px}.strip-bar{display:none}body.working .search-card,body.has-results .search-card{margin-left:12px;margin-right:12px}body.working .results{padding-bottom:170px}}
+@media(max-width:760px){.work-strip{margin:0 0 16px}.strip-bar{display:none}}
 .results-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .export-row{display:flex;gap:6px;flex-wrap:wrap}
 .mini-button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:9px 11px;font:600 11px 'DM Sans';cursor:pointer}

@@ -123,7 +123,7 @@ async function startRun(question, sources) {
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, sources, depth }) });
     let run = await response.json(); if (!response.ok) throw new Error(run.error || 'Research could not be started.');
     while (run.status === 'queued' || run.status === 'running') { updateAgents(run.agents); syncResultProgress(run); await new Promise(resolve => setTimeout(resolve, 700)); const progress = await fetch(`/api/runs/${run.id}`); run = await progress.json(); }
-    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); toast('Evidence brief saved to your library.');
+    updateAgents(run.agents); if (run.status !== 'completed') throw new Error(run.error || 'Research could not be completed.'); finishResultLoading(true); renderProject(run.result); refreshLibraryCount(); loadConversations(); toast('Evidence brief saved to your library.');
   } catch (error) { finishResultLoading(false); $('#statusText').textContent = 'Research needs attention'; document.body.classList.remove('working'); toast(error.message); }
   finally { setRunning(false); }
 }
@@ -171,13 +171,29 @@ async function refreshLibraryCount() {
   } catch {}
 }
 refreshLibraryCount();
+updateDockMeta();
+
+async function loadConversations() {
+  const section = $('#conversations'); const list = $('#conversationList'); if (!section || !list) return;
+  try {
+    const response = await fetch('/api/projects'); if (!response.ok) throw new Error('unavailable');
+    const projects = await response.json();
+    document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
+    if (!projects.length) { section.hidden = true; return; }
+    section.hidden = false;
+    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></article>`).join('');
+    list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); if (!p) return; $('#prompt').value = p.question; renderProject(p); }));
+    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadConversations(); }));
+  } catch { section.hidden = true; }
+}
+loadConversations();
 
 async function loadLibrary() {  const list = $('.library-list'); list.innerHTML = '<div><b>Loading saved research…</b></div>';
   try {
     const response = await fetch('/api/projects'); const projects = await response.json(); document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     list.innerHTML = projects.length ? projects.map(p => `<div class="library-item"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">×</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
-    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); }));
+    list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); loadLibrary(); loadConversations(); }));
   } catch { list.innerHTML = '<div><b>Library unavailable.</b><span>Start the local server and try again.</span></div>'; }
 }
 
