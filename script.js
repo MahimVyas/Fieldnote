@@ -166,8 +166,43 @@ function sourceHtml(source) {
   return source.url ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source">${body}</a>` : `<div class="source source-local">${body}</div>`;
 }
 function updateAgents(agents) {
-  const mapping = { 'web-scout': ['#webCount', '.agent-card:nth-child(1)'], 'video-listener': ['#videoCount', '.agent-card:nth-child(2)'], 'paper-trail': ['#paperCount', '.agent-card:nth-child(3)'], 'document-reader': ['#docCount', '.agent-card:nth-child(4)'] };
-  agents.forEach(agent => { const entry = mapping[agent.name]; if (!entry) return; $(entry[0]).textContent = agent.name === 'document-reader' ? (agent.status === 'completed' ? `${agent.sources_found} documents matched` : agent.status === 'failed' ? 'No documents matched' : agent.status === 'running' ? 'Reading local files…' : 'Private context on hold') : agent.status === 'completed' ? `${agent.sources_found} sources found` : agent.status === 'failed' ? 'Could not reach source' : 'Working…'; document.querySelector(entry[1]).classList.toggle('is-working', agent.status === 'running'); });
+  const ui = {
+    'web-scout': { count: '#webCount', card: '.agent-card:nth-child(1)', verb: 'SEARCHING' },
+    'video-listener': { count: '#videoCount', card: '.agent-card:nth-child(2)', verb: 'WATCHING' },
+    'paper-trail': { count: '#paperCount', card: '.agent-card:nth-child(3)', verb: 'READING' },
+    'document-reader': { count: '#docCount', card: '.agent-card:nth-child(4)', verb: 'SCANNING' }
+  };
+  const seen = new Set();
+  agents.forEach(agent => {
+    const entry = ui[agent.name]; if (!entry) return; seen.add(agent.name);
+    const card = document.querySelector(entry.card); if (!card) return;
+    const track = card.querySelector('.progress'); const bar = card.querySelector('.progress i');
+    const state = card.querySelector('.agent-state'); const count = $(entry.count);
+    card.classList.toggle('is-working', agent.status === 'running');
+    if (track) { track.classList.toggle('running', agent.status === 'running'); track.classList.toggle('failed', agent.status === 'failed'); }
+    if (bar && agent.status !== 'running') bar.style.width = (agent.status === 'completed' || agent.status === 'failed') ? '100%' : '0%';
+    if (state) {
+      state.textContent = agent.status === 'running' ? entry.verb : agent.status === 'completed' ? 'DONE' : agent.status === 'failed' ? 'FAILED' : agent.status === 'queued' ? 'QUEUED' : state.textContent;
+      state.classList.toggle('muted', agent.status !== 'running');
+    }
+    let label;
+    if (agent.status === 'completed') label = agent.name === 'document-reader' ? `${agent.sources_found} documents matched` : agent.name === 'video-listener' ? `${agent.sources_found} videos found` : agent.name === 'paper-trail' ? `${agent.sources_found} papers indexed` : `${agent.sources_found} sources found`;
+    else if (agent.status === 'failed') label = `Failed: ${String(agent.error || 'Could not reach source').slice(0, 64)}`;
+    else if (agent.status === 'running') label = 'Working…';
+    else label = agent.name === 'document-reader' ? 'Private context on hold' : 'Standing by…';
+    if (count) { count.textContent = label; count.title = agent.error || ''; }
+  });
+  Object.entries(ui).forEach(([name, entry]) => {
+    if (seen.has(name)) return;
+    const card = document.querySelector(entry.card); if (!card) return;
+    const track = card.querySelector('.progress'); const bar = card.querySelector('.progress i');
+    const state = card.querySelector('.agent-state'); const count = $(entry.count);
+    card.classList.remove('is-working');
+    if (track) track.classList.remove('running', 'failed');
+    if (bar) bar.style.width = '0%';
+    if (state) { state.textContent = name === 'document-reader' ? 'ON HOLD' : 'READY'; state.classList.add('muted'); }
+    if (count) { count.textContent = name === 'document-reader' ? 'Private context on hold' : 'Standing by…'; count.title = ''; }
+  });
 }
 function evidenceArticle(item, index) {
   return `<article><span>${String(index + 1).padStart(2, '0')}</span><div><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.source_type)} · ${escapeHtml(item.reliability)}${item.relevance ? ` · ${item.relevance}% match` : ''}</small><p>${escapeHtml(item.excerpt || 'No excerpt available.')}</p>${oaBadge(item)}</div></article>`;

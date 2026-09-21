@@ -147,6 +147,20 @@ test('palette filter matches all terms, ranks prefix hits first', () => {
   assert.deepEqual(run('zzz'), []);
 });
 
+test('agent cards reflect live status, verbs, and trimmed errors', () => {
+  const { sandbox, registry } = loadFrontend();
+  vm.runInContext(`updateAgents([
+    {name:'web-scout',status:'running',sources_found:0},
+    {name:'paper-trail',status:'failed',sources_found:0,error:'Upstream service returned 503 Service Unavailable Extra Long Text That Should Be Trimmed Down Past Sixty Four Characters'},
+    {name:'mystery',status:'running',sources_found:0}
+  ])`, sandbox);
+  assert.equal(registry.get('#webCount').textContent, 'Working…');
+  const failed = registry.get('#paperCount');
+  assert.ok(failed.textContent.startsWith('Failed:'));
+  assert.ok(failed.textContent.length <= 'Failed: '.length + 64);
+  assert.equal(failed.title, 'Upstream service returned 503 Service Unavailable Extra Long Text That Should Be Trimmed Down Past Sixty Four Characters');
+});
+
 test('full run flow renders, caches, and toasts', async () => {
   const { sandbox, registry, bodyClasses } = loadFrontend();
   const result = { id: 'run-1', question: 'Flow question?', depth: 'Thorough', created_at: '2026-01-01',
