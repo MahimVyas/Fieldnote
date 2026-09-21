@@ -310,6 +310,7 @@ async function startRun(question, sources) {
   const hint = $('#firstHint'); if (hint) hint.hidden = true;
   const chips = $('#followChips'); if (chips) chips.hidden = true;
   document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
+  queueLift(); requestAnimationFrame(queueLift); setTimeout(queueLift, 650);
   runActive = true; cancelRequested = false; activeRunId = null;
   runStartedAt = Date.now();
   lockPrompt(true);
