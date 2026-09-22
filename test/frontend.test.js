@@ -260,3 +260,17 @@ test('loader meta shows agents working and sources so far', () => {
   assert.equal(registry.get('#loadingAgents').textContent, '1 of 2 agents working');
   assert.equal(registry.get('#loadingSources').textContent, '10 sources found so far');
 });
+
+test('demo run plays start to end without touching the run API', async () => {
+  const { sandbox, registry } = loadFrontend();
+  const urls = [];
+  sandbox.fetch = async (url) => { urls.push(String(url)); return { ok: false }; };
+  await vm.runInContext(`runExample()`, sandbox);
+  assert.ok(!urls.some(u => u.includes('/api/runs')), `demo hit run API: ${urls}`);
+  const cached = [...vm.runInContext(`readCache()`, sandbox)];
+  assert.equal(cached.length, 1);
+  assert.equal(cached[0].demo, true);
+  assert.ok(registry.get('.summary-card').innerHTML.includes('evidence brief contains'));
+  assert.ok(registry.get('#toast').textContent.includes('Demo complete'));
+  assert.ok(registry.get('#prompt').value.length > 20);
+});

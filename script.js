@@ -142,6 +142,7 @@ function finishResultLoading(success) {
 }
 
 document.querySelectorAll('.nav-link').forEach(button => button.addEventListener('click', () => {
+  if (button.id === 'demoRun') { setNav(false); window.scrollTo({ top: 0 }); runExample(); return; }
   document.querySelectorAll('.nav-link').forEach(b => { b.classList.remove('active'); b.removeAttribute('aria-current'); });
   button.classList.add('active'); button.setAttribute('aria-current', 'page');
   ['research', 'stack', 'library'].forEach(view => $('#'+view+'View').hidden = button.dataset.view !== view);
@@ -278,9 +279,126 @@ function applyEvidenceView() {
   else if (mode === 'newest') items.sort((a, b) => yearOf(b) - yearOf(a));
   renderEvidenceList(items);
 }
+/* ── Canned demo runs: the full show, zero network ───────────────── */
 let currentProject = null;
 let currentEvidence = [];
 let lastEvidenceRendered = [];
+const EXAMPLE_RUNS = [
+  {
+    id: 'demo-standing-desks', question: 'Do standing desks actually improve health?', depth: 'Thorough', demo: true, created_at: '2026-09-22T00:00:00.000Z', errors: [],
+    agents: [
+      { name: 'web-scout', source: 'Web', status: 'completed', sources_found: 2, started_at: '', completed_at: '' },
+      { name: 'video-listener', source: 'YouTube', status: 'completed', sources_found: 1, started_at: '', completed_at: '' },
+      { name: 'paper-trail', source: 'Papers', status: 'completed', sources_found: 3, started_at: '', completed_at: '' }
+    ],
+    sources: [
+      { id: 'web:standing-desk', title: 'Standing desk', url: 'https://en.wikipedia.org/wiki/Standing_desk', source_type: 'Web', excerpt: 'A standing desk, also called a stand-up desk, is basically a desk that allows you to stand up comfortably while working. Many modern versions are adjustable, so that you can change the height of the desk and alternate between sitting and standing.', published_at: null, publisher: 'Wikipedia', reliability: 'context', relevance: { score: 86, terms: ['standing', 'desk', 'health'] } },
+      { id: 'web:sedentary', title: 'Sedentary behaviour and health risks', url: 'https://en.wikipedia.org/wiki/Sedentary_lifestyle', source_type: 'Web', excerpt: 'Prolonged sitting is associated with higher risks of cardiovascular disease, type 2 diabetes, and early mortality, though researchers debate how much of the effect remains after accounting for exercise.', published_at: null, publisher: 'Wikipedia', reliability: 'context', relevance: { score: 57, terms: ['health', 'sitting'] } },
+      { id: 'paper:stand-review', title: 'Health effects of sit-stand desks: a systematic review', url: 'https://doi.org/10.10/example.stand1', source_type: 'Paper', excerpt: 'Across fourteen trials, sit-stand desks reduced daily sitting time by roughly ninety minutes. Effects on blood pressure and glucose were small and inconsistent, while lower-back discomfort improved modestly.', published_at: '2021', publisher: 'Ergonomics Journal', reliability: 'scholarly', citations: 45, relevance: { score: 92, terms: ['standing', 'desks', 'health'] } },
+      { id: 'paper:stand-rct', title: 'Sit-stand desks and cardiometabolic markers: a randomised trial', url: 'https://doi.org/10.10/example.stand2', source_type: 'Paper', excerpt: 'In a twelve-week randomised trial of office workers, the sit-stand group stood an extra hour per day with no significant change in weight, cholesterol, or blood sugar compared with controls.', published_at: '2022', publisher: 'Occupational Health', reliability: 'scholarly', citations: 18, relevance: { score: 78, terms: ['standing', 'health'] } },
+      { id: 'paper:stand-workplace', title: 'Workplace interventions to reduce sitting: a review of reviews', url: 'https://doi.org/10.10/example.stand3', source_type: 'Paper', excerpt: 'Scholarly record returned by Crossref.', published_at: '2020', publisher: 'Crossref', reliability: 'record', citations: 60, relevance: { score: 64, terms: ['standing', 'health'] } },
+      { id: 'video:stand', title: 'YouTube video dQw4w9WgXcQ', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', source_type: 'Video', excerpt: 'A YouTube search result. Review the video, creator, date, and available transcript before citing it.', published_at: null, publisher: 'YouTube', reliability: 'discovery' }
+    ],
+    brief: {
+      opening: 'This evidence brief contains 6 reviewed sources for “Do standing desks actually improve health?.” Sources are ranked for review; no conclusion is presented without a traceable source.',
+      findings: ['“Across fourteen trials, sit-stand desks reduced daily sitting time by roughly ninety minutes.” — Health effects of sit-stand desks: a systematic review', '“The sit-stand group stood an extra hour per day with no significant change in weight, cholesterol, or blood sugar compared with controls.” — Sit-stand desks and cardiometabolic markers: a randomised trial', '3 scholarly records were retrieved. Begin with “Health effects of sit-stand desks: a systematic review”; assess study design, population, publication venue, and date before using it as evidence.'],
+      caveat: 'Retrieval is fallible and incomplete. Confirm authorship, date, methods, jurisdiction, and the original claim before publishing or making a decision.',
+      synthesis: 'extractive',
+      takeaways: ['Standing desks reliably cut sitting time, but measurable health gains are modest.', 'Back discomfort is the most consistently improved outcome.', 'No video evidence was verified in this run — treat the video lead as a pointer only.'],
+      faq: [{ q: 'Do standing desks cause weight loss?', a: 'The randomised trial found no significant weight change versus controls over twelve weeks.' }, { q: 'What improves most reliably?', a: 'Daily sitting time and self-reported lower-back discomfort.' }],
+      coverage: { total: 6, papers: 3, web: 2, videos: 1, documents: 0, search_terms: ['standing', 'desks', 'improve', 'health'] },
+      evidence_map: [
+        { title: 'Health effects of sit-stand desks: a systematic review', source_type: 'Paper', reliability: 'scholarly', relevance: 92, excerpt: 'Across fourteen trials, sit-stand desks reduced daily sitting time by roughly ninety minutes.', url: 'https://doi.org/10.10/example.stand1' },
+        { title: 'Standing desk', source_type: 'Web', reliability: 'context', relevance: 86, excerpt: 'A standing desk allows you to stand up comfortably while working, with adjustable versions alternating between sitting and standing.', url: 'https://en.wikipedia.org/wiki/Standing_desk' },
+        { title: 'Sit-stand desks and cardiometabolic markers: a randomised trial', source_type: 'Paper', reliability: 'scholarly', relevance: 78, excerpt: 'The sit-stand group stood an extra hour per day with no significant change in weight, cholesterol, or blood sugar.', url: 'https://doi.org/10.10/example.stand2' },
+        { title: 'Workplace interventions to reduce sitting: a review of reviews', source_type: 'Paper', reliability: 'record', relevance: 64, excerpt: 'Scholarly record returned by Crossref.', url: 'https://doi.org/10.10/example.stand3' },
+        { title: 'Sedentary behaviour and health risks', source_type: 'Web', reliability: 'context', relevance: 57, excerpt: 'Prolonged sitting is associated with higher risks of cardiovascular disease and diabetes.', url: 'https://en.wikipedia.org/wiki/Sedentary_lifestyle' }
+      ],
+      research_gaps: ['No long-term trial beyond twelve weeks was reviewed; multi-year outcomes are unknown.', 'Standing-desk studies skew toward office workers in high-income countries.', 'This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.']
+    }
+  },
+  {
+    id: 'demo-habits', question: 'What makes habits stick, according to research?', depth: 'Thorough', demo: true, created_at: '2026-09-22T00:00:00.000Z', errors: [],
+    agents: [
+      { name: 'web-scout', source: 'Web', status: 'completed', sources_found: 2, started_at: '', completed_at: '' },
+      { name: 'video-listener', source: 'YouTube', status: 'completed', sources_found: 1, started_at: '', completed_at: '' },
+      { name: 'paper-trail', source: 'Papers', status: 'completed', sources_found: 4, started_at: '', completed_at: '' }
+    ],
+    sources: [
+      { id: 'paper:lally', title: 'How are habits formed: modelling habit formation in the real world', url: 'https://doi.org/10.10/example.habit1', source_type: 'Paper', excerpt: 'In a twelve-week study, participants took a median of sixty-six days for a new behaviour to become automatic, with wide variation from eighteen to over two hundred days depending on complexity.', published_at: '2010', publisher: 'European Journal of Social Psychology', reliability: 'scholarly', citations: 1200, relevance: { score: 95, terms: ['habits', 'research'] } },
+      { id: 'paper:wood', title: 'Habit learning and automaticity in everyday life', url: 'https://doi.org/10.10/example.habit2', source_type: 'Paper', excerpt: 'Habits form through context-response associations repeated consistently: stable cues, immediate rewards, and friction reduction matter far more than motivation or willpower.', published_at: '2019', publisher: 'Psychological Review', reliability: 'scholarly', citations: 640, relevance: { score: 88, terms: ['habits', 'research'] } },
+      { id: 'web:habit-loop', title: 'Habit loop: cue, routine, reward', url: 'https://en.wikipedia.org/wiki/Habit', source_type: 'Web', excerpt: 'Habits are routines of behaviour repeated regularly that tend to occur subconsciously. The habit loop of cue, routine, and reward is a widely used framework for describing them.', published_at: null, publisher: 'Wikipedia', reliability: 'context', relevance: { score: 71, terms: ['habits'] } },
+      { id: 'web:friction', title: 'Choice architecture and behaviour change', url: 'https://en.wikipedia.org/wiki/Nudge_theory', source_type: 'Web', excerpt: 'Small changes to the environment that make desired behaviours easier are among the most reliable drivers of behaviour change in field studies.', published_at: null, publisher: 'Wikipedia', reliability: 'context', relevance: { score: 57, terms: ['habits'] } },
+      { id: 'paper:exercise', title: 'Cue consistency and exercise adherence', url: 'https://doi.org/10.10/example.habit3', source_type: 'Paper', excerpt: 'Scholarly record returned by Crossref.', published_at: '2021', publisher: 'Crossref', reliability: 'record', citations: 22, relevance: { score: 62, terms: ['habits'] } },
+      { id: 'paper:sleep', title: 'Implementation intentions and goal attainment', url: 'https://doi.org/10.10/example.habit4', source_type: 'Paper', excerpt: 'Scholarly record returned by Semantic Scholar.', published_at: '2018', publisher: 'Semantic Scholar', reliability: 'record', citations: 310, relevance: { score: 55, terms: ['habits'] } },
+      { id: 'video:habit', title: 'YouTube video 9bZkp7q19f0', url: 'https://www.youtube.com/watch?v=9bZkp7q19f0', source_type: 'Video', excerpt: 'A YouTube search result. Review the video, creator, date, and available transcript before citing it.', published_at: null, publisher: 'YouTube', reliability: 'discovery' }
+    ],
+    brief: {
+      opening: 'This evidence brief contains 7 reviewed sources for “What makes habits stick, according to research?.” Sources are ranked for review; no conclusion is presented without a traceable source.',
+      findings: ['“Participants took a median of sixty-six days for a new behaviour to become automatic, with wide variation from eighteen to over two hundred days.” — How are habits formed: modelling habit formation in the real world', '“Stable cues, immediate rewards, and friction reduction matter far more than motivation or willpower.” — Habit learning and automaticity in everyday life', '4 scholarly records were retrieved. Begin with “How are habits formed: modelling habit formation in the real world”; assess study design, population, publication venue, and date before using it as evidence.'],
+      caveat: 'Retrieval is fallible and incomplete. Confirm authorship, date, methods, jurisdiction, and the original claim before publishing or making a decision.',
+      synthesis: 'extractive',
+      takeaways: ['Forget the 21-day myth: expect two to eight months depending on complexity.', 'Design the environment first — cues and friction beat motivation.', 'Pair new behaviours with existing routines and immediate rewards.'],
+      faq: [{ q: 'How long does habit formation really take?', a: 'A median of 66 days in the best-known study, ranging from 18 to 254 days.' }, { q: 'What matters more than willpower?', a: 'Stable context cues, immediate rewards, and reducing friction.' }],
+      coverage: { total: 7, papers: 4, web: 2, videos: 1, documents: 0, search_terms: ['habits', 'stick', 'research'] },
+      evidence_map: [
+        { title: 'How are habits formed: modelling habit formation in the real world', source_type: 'Paper', reliability: 'scholarly', relevance: 95, excerpt: 'Participants took a median of sixty-six days for a new behaviour to become automatic.', url: 'https://doi.org/10.10/example.habit1' },
+        { title: 'Habit learning and automaticity in everyday life', source_type: 'Paper', reliability: 'scholarly', relevance: 88, excerpt: 'Stable cues, immediate rewards, and friction reduction matter far more than motivation.', url: 'https://doi.org/10.10/example.habit2' },
+        { title: 'Habit loop: cue, routine, reward', source_type: 'Web', reliability: 'context', relevance: 71, excerpt: 'The habit loop of cue, routine, and reward is a widely used framework.', url: 'https://en.wikipedia.org/wiki/Habit' },
+        { title: 'Cue consistency and exercise adherence', source_type: 'Paper', reliability: 'record', relevance: 62, excerpt: 'Scholarly record returned by Crossref.', url: 'https://doi.org/10.10/example.habit3' },
+        { title: 'Choice architecture and behaviour change', source_type: 'Web', reliability: 'context', relevance: 57, excerpt: 'Small environmental changes are among the most reliable drivers of behaviour change.', url: 'https://en.wikipedia.org/wiki/Nudge_theory' }
+      ],
+      research_gaps: ['Most habit studies track weeks, not years; lifelong maintenance is unstudied.', 'Evidence skews toward health behaviours like diet and exercise.', 'This run has not assessed study quality, conflicts of interest, or whether sources disagree; those require source-level review.']
+    }
+  }
+];
+let exampleTimers = [];
+let exampleActive = false;
+let lastExample = -1;
+function exampleStages(project) {
+  const counts = {}; project.agents.forEach(a => { counts[a.name] = a.sources_found; });
+  const at = statuses => project.agents.map(a => ({ name: a.name, source: a.source, status: statuses[a.name] || 'queued', sources_found: statuses[a.name] === 'completed' ? (counts[a.name] || 0) : 0, started_at: '', completed_at: '' }));
+  return [
+    { t: 500, agents: at({}) },
+    { t: 1500, agents: at({ 'web-scout': 'running', 'video-listener': 'running' }) },
+    { t: 2700, agents: at({ 'web-scout': 'completed', 'video-listener': 'completed', 'paper-trail': 'running' }) },
+    { t: 3900, agents: at({ 'web-scout': 'completed', 'video-listener': 'completed', 'paper-trail': 'completed' }) }
+  ];
+}
+function runExample() {
+  if (runActive) return toast('Finish or stop the current run first.');
+  let i = Math.floor(Math.random() * EXAMPLE_RUNS.length);
+  if (EXAMPLE_RUNS.length > 1 && i === lastExample) i = (i + 1) % EXAMPLE_RUNS.length;
+  lastExample = i;
+  const project = JSON.parse(JSON.stringify(EXAMPLE_RUNS[i]));
+  $('#prompt').value = project.question;
+  updateDockMeta();
+  try { localStorage.setItem('fieldnote.seen', '1'); } catch {}
+  const hint = $('#firstHint'); if (hint) hint.hidden = true;
+  const chips = $('#followChips'); if (chips) chips.hidden = true;
+  document.body.classList.add('working'); document.body.classList.remove('has-results', 'dock-expanded');
+  lockPrompt(true); setRunning(true); exampleActive = true;
+  $('#statusText').textContent = 'Demo agents are retrieving sample evidence';
+  showResultLoading();
+  const run = { id: project.id, question: project.question, depth: project.depth, status: 'running', started_at: new Date().toISOString(), agents: exampleStages(project)[0].agents };
+  updateAgents(run.agents); syncResultProgress({ agents: run.agents });
+  exampleStages(project).slice(1).forEach(stage => exampleTimers.push(setTimeout(() => {
+    if (!exampleActive) return;
+    run.agents = stage.agents; updateAgents(run.agents); syncResultProgress({ agents: run.agents });
+  }, stage.t)));
+  exampleTimers.push(setTimeout(() => {
+    if (!exampleActive) return;
+    exampleActive = false; lockPrompt(false);
+    finishResultLoading(true); renderProject(project); cacheProject(project); refreshLibraryCount(); loadConversations();
+    toast('Demo complete — this was sample data, not live research.');
+  }, 4700));
+}
+function cancelExample() {
+  exampleTimers.forEach(clearTimeout); exampleTimers = [];
+  exampleActive = false; lockPrompt(false); setRunning(false);
+  finishResultLoading(false); $('#statusText').textContent = 'Demo cancelled';
+  document.body.classList.remove('working'); toast('Demo cancelled.');
+}
 function renderProject(project) {
   currentProject = project;
   currentEvidence = project.brief.evidence_map || [];
@@ -420,6 +538,7 @@ window.addEventListener('hashchange', routeHash);
 routeHash();
 
 $('#runResearch').addEventListener('click', async () => {
+  if (exampleActive) { cancelExample(); return; }
   if (runActive) {
     if (Date.now() - runStartedAt < 800) return;
     cancelRequested = true; toast('Cancelling run…'); return;
@@ -427,7 +546,7 @@ $('#runResearch').addEventListener('click', async () => {
   const question = $('#prompt').value.trim(); const sources = [...document.querySelectorAll('.source-toggle input:checked')].map(input => input.dataset.source);
   startRun(question, sources);
 });
-$('#newResearch').addEventListener('click', () => { document.body.classList.remove('working', 'has-results', 'dock-expanded'); try { history.replaceState(null, '', location.pathname); } catch {} $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
+$('#newResearch').addEventListener('click', () => { if (exampleActive) cancelExample(); document.body.classList.remove('working', 'has-results', 'dock-expanded'); try { history.replaceState(null, '', location.pathname); } catch {} $('.nav-link[data-view="research"]').click(); $('#prompt').value = ''; $('#prompt').focus(); window.scrollTo({ top: 80, behavior: 'smooth' }); });
 $('#connectDocs').addEventListener('click', () => toast('Document ingestion is the next local connector to configure. Private files stay on your machine.'));
 $('#openBrief').addEventListener('click', () => { const summary = document.querySelector('.summary-card'); if (!summary) return; summary.scrollIntoView({ behavior: 'smooth', block: 'center' }); summary.classList.remove('flash'); void summary.offsetWidth; summary.classList.add('flash'); setTimeout(() => summary.classList.remove('flash'), 1300); });
 function exportFilename(format) { return currentProject ? `fieldnote-${currentProject.id.slice(0, 8)}.${format}` : null; }
@@ -503,7 +622,7 @@ async function loadConversations() {
     document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
     if (!projects.length) { section.hidden = true; return; }
     section.hidden = false;
-    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}${p.brief && p.brief.grade ? ` · ${escapeHtml(p.brief.grade.label)}` : ''}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
+    list.innerHTML = projects.slice(0, 6).map(p => `<article class="conversation-card"><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.synthesis === 'llm' ? ' · AI summary' : ''}${p.brief && p.brief.grade ? ` · ${escapeHtml(p.brief.grade.label)}` : ''}${p.demo ? ' · demo' : ''}${p._localOnly ? ' · this device' : ''}</span></button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></article>`).join('');
     list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); if (!p) return; $('#prompt').value = p.question; renderProject(p); }));
     list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); loadConversations(); }));
   } catch {
@@ -552,7 +671,7 @@ function renderLibraryList(projects, remember = true) {
   const clearBtn = $('#clearLibrary'); if (clearBtn) clearBtn.hidden = !projects.length;
   renderStats(projects);
   document.querySelectorAll('.count').forEach(el => el.textContent = projects.length);
-  list.innerHTML = projects.length ? projects.map((p, i) => `<div class="library-item"><span class="lib-index">${String(i + 1).padStart(2, '0')}</span><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.grade ? ` · ${escapeHtml(p.brief.grade.label)}` : ''}${p._localOnly ? ' · this device' : ''}</span></button><button class="compare-toggle${compareSet.has(p.id) ? ' on' : ''}" data-compare="${p.id}" aria-pressed="${compareSet.has(p.id)}" title="Select to compare">vs</button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
+  list.innerHTML = projects.length ? projects.map((p, i) => `<div class="library-item"><span class="lib-index">${String(i + 1).padStart(2, '0')}</span><button data-open="${p.id}"><b>${escapeHtml(p.question)}</b><span>${p.sources.length} sources · ${new Date(p.created_at).toLocaleDateString()}${p.brief && p.brief.grade ? ` · ${escapeHtml(p.brief.grade.label)}` : ''}${p.demo ? ' · demo' : ''}${p._localOnly ? ' · this device' : ''}</span></button><button class="compare-toggle${compareSet.has(p.id) ? ' on' : ''}" data-compare="${p.id}" aria-pressed="${compareSet.has(p.id)}" title="Select to compare">vs</button><button class="delete-project" data-delete="${p.id}" aria-label="Delete research">${icon('trash')}</button></div>`).join('') : '<div><b>No saved research yet.</b><span>Run a question to create your first evidence brief.</span></div>';
   list.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => { const p = projects.find(item => item.id === button.dataset.open); $('.nav-link[data-view="research"]').click(); $('#prompt').value = p.question; renderProject(p); }));
   list.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', async () => { try { await fetch(`/api/projects/${button.dataset.delete}`, { method: 'DELETE' }); } catch {} uncacheProject(button.dataset.delete); compareSet.delete(button.dataset.delete); loadLibrary(); loadConversations(); }));
   list.querySelectorAll('[data-compare]').forEach(button => button.addEventListener('click', () => {
@@ -651,6 +770,7 @@ function paletteItems(projects) {
     { label: 'Go to Research', hint: 'view', run: () => $('.nav-link[data-view="research"]').click() },
     { label: 'Go to Library', hint: 'view', run: () => $('.nav-link[data-view="library"]').click() },
     { label: 'Go to Tech stack', hint: 'view', run: () => $('.nav-link[data-view="stack"]').click() },
+    { label: 'Run demo research', hint: 'sample', run: () => runExample() },
     { label: 'Toggle dark mode', hint: 'theme', run: () => $('#themeToggle').click() },
     { label: `Depth: switch to ${depth === 'Thorough' ? 'Quick' : 'Thorough'}`, hint: 'depth', run: () => $('#depthButton').click() }
   ];
