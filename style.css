@@ -141,15 +141,28 @@ body.working #prompt{opacity:.8}
 .icon-button:hover{color:var(--orange);border-color:var(--orange)}
 #micButton.recording{color:#fff;background:#c74e43;border-color:#c74e43;animation:mic-pulse 1.2s ease-in-out infinite}
 .grade{display:inline-block;font:600 10px 'DM Mono';letter-spacing:.5px;padding:4px 9px;border-radius:20px;margin-left:8px;vertical-align:2px}
+button.grade{border:0;cursor:pointer;font-family:'DM Mono'}
 .grade.g0{color:#c74e43;background:rgba(199,78,67,.12)}
 .grade.g1{color:var(--orange);background:rgba(237,89,57,.12)}
 .grade.g2{color:var(--green);background:rgba(84,167,128,.14)}
 .grade.g3{color:var(--blue);background:rgba(97,115,218,.14)}
-.grade-details{margin:0 0 25px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:14px 18px}
-.grade-details summary{font:600 12.5px 'DM Sans';cursor:pointer;color:var(--ink)}
+.grade-wrap{position:relative;display:inline-block}
+.grade-pop{position:absolute;top:calc(100% + 10px);left:0;z-index:25;width:290px;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 44px rgba(0,0,0,.25);padding:14px 16px;text-align:left}
+.grade-pop[hidden]{display:none}
+.grade-desc{display:block;font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 4px}
+.grade-burst{position:absolute;inset:0;pointer-events:none}
+.grade-burst svg{position:absolute;left:50%;top:50%;width:12px;height:12px;color:var(--orange);opacity:0}
+.grade-wrap.burst .grade-burst svg{animation:star-out 1.1s ease-out 1}
+.grade-wrap.burst .grade-burst svg:nth-child(1){--dx:-36px;--dy:-24px}
+.grade-wrap.burst .grade-burst svg:nth-child(2){--dx:36px;--dy:-24px}
+.grade-wrap.burst .grade-burst svg:nth-child(3){--dx:-44px;--dy:4px}
+.grade-wrap.burst .grade-burst svg:nth-child(4){--dx:44px;--dy:4px}
+.grade-wrap.burst .grade-burst svg:nth-child(5){--dx:-20px;--dy:30px}
+.grade-wrap.burst .grade-burst svg:nth-child(6){--dx:20px;--dy:30px}
+@keyframes star-out{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}25%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx,20px)),calc(-50% + var(--dy,-20px))) scale(1)}}
 .grade-bar{display:flex;align-items:center;gap:12px;margin-top:10px;font:11px 'DM Mono';color:var(--muted)}
 .grade-bar>span{flex:none;width:130px}
-.grade-bar>div{flex:1;height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.grade-bar .grade-track{flex:1;height:4px;background:var(--line);border-radius:4px;overflow:hidden}
 .grade-bar i{display:block;height:100%;background:var(--orange);border-radius:inherit}
 .grade-bar>b{flex:none;font-weight:500}
 @media(max-width:760px){.grade-bar>span{width:110px}}

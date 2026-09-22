@@ -161,6 +161,19 @@ test('citation builders format APA and BibTeX', () => {
   assert.ok(bib.includes('author = {Nature}'));
 });
 
+test('grade pill renders popover with factors', () => {
+  const { sandbox, registry } = loadFrontend();
+  const p = { id: 'g1', question: 'Q?', depth: 'T', created_at: '', sources: [], agents: [],
+    brief: { opening: 'O', synthesis: 'template', findings: ['F'], takeaways: [], faq: [], coverage: { total: 0, papers: 0, web: 0, videos: 0, documents: 0, search_terms: [] }, evidence_map: [], research_gaps: [], caveat: 'C',
+      grade: { score: 82, label: 'Comprehensive', tier: 3, factors: [{ name: 'Source volume', points: 25, max: 25 }] } } };
+  vm.runInContext(`renderProject(${JSON.stringify(p)})`, sandbox);
+  const eyebrow = registry.get('.results-head .eyebrow').innerHTML;
+  assert.ok(eyebrow.includes('grade-pop'));
+  assert.ok(eyebrow.includes('Comprehensive'));
+  assert.ok(eyebrow.includes('Source volume'));
+  assert.ok(eyebrow.includes('grade-burst'));
+});
+
 test('palette filter matches all terms, ranks prefix hits first', () => {
   const { sandbox } = loadFrontend();
   const items = [
