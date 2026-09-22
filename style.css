@@ -11,15 +11,15 @@
 .report-heading{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
 .report-heading>div:first-child{flex:1 1 auto}
 .report-heading>p{flex:1 1 100%;max-width:640px;margin:0}
-#detailsToggle{flex:none}.report-heading{display:flex;justify-content:space-between;gap:25px;align-items:end}.report-heading h3{font:600 26px 'Playfair Display';letter-spacing:-.8px;margin:10px 0 0}.report-heading>p{max-width:370px;color:var(--muted);font-size:12px;line-height:1.5;margin:0}.rep-sec{display:flex;align-items:baseline;gap:14px;margin:30px 0 2px}
+#detailsToggle{flex:none}.report-heading{display:flex;justify-content:space-between;gap:25px;align-items:end}.report-heading h3{font:600 26px 'Playfair Display';letter-spacing:-.8px;margin:10px 0 0}.report-heading>p{max-width:370px;color:var(--muted);font-size:12px;line-height:1.5;margin:0}.rep-sec{display:flex;align-items:baseline;gap:14px;margin:36px 0 10px}
 .rep-sec h4{font:600 19px 'Playfair Display';letter-spacing:-.4px;margin:0}
 .rep-sec .evidence-tools{margin-left:auto}
-.coverage-grid{display:flex;margin:4px 0 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.coverage-grid{display:flex;margin:4px 0 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .coverage-grid div{flex:1;padding:16px 18px 14px}
 .coverage-grid div+div{border-left:1px solid var(--line)}
 .coverage-grid b{font:600 30px 'Playfair Display';color:var(--orange)}
 .coverage-grid span{font:10px 'DM Mono';color:var(--muted);text-transform:uppercase;margin-top:5px;display:block}
-.takeaway-rows{border-bottom:1px solid var(--line);margin-bottom:4px}
+.takeaway-rows{border-bottom:1px solid var(--line);margin-bottom:12px}
 .faq-list details{border-top:1px solid #e3ded4;padding:12px 0}
 .faq-list summary{font-size:12px;font-weight:600;cursor:pointer;line-height:1.5}
 .faq-list details p{border:0;padding:7px 0 0;font-size:12px;line-height:1.5;color:#5f5b53;margin:0}
