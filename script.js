@@ -726,6 +726,10 @@ document.addEventListener('keydown', e => {
   btn.addEventListener('click', () => { try { btn.classList.add('recording'); rec.start(); } catch { btn.classList.remove('recording'); } });
 })();
 
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+  document.querySelectorAll('.stack-grid article, .architecture>div').forEach(el => { el.classList.add('reveal'); io.observe(el); });
+}
 (async function serviceStatus() {  const dot = $('#footDot'); const text = $('#footText'); if (!dot || !text) return;
   if (DEMO) { text.textContent = 'static preview — run npm start locally for full research'; return; }
   try {
