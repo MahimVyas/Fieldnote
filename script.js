@@ -290,8 +290,8 @@ function renderProject(project) {
   $('.results h2').textContent = project.question;
   const gradeDescriptions = ['Thin evidence — treat any conclusion as preliminary.', 'A useful starting point with clear gaps to close.', 'Broad, well-matched evidence worth trusting with checks.', 'Deep, diverse, well-matched evidence across source types.'];
   document.querySelector('.results-head .eyebrow').innerHTML = `<i></i> EVIDENCE BRIEF${project.brief.grade ? ` <span class="grade-wrap"><button class="grade g${project.brief.grade.tier}" id="gradePill" aria-expanded="false" aria-label="Why this grade?">${escapeHtml(project.brief.grade.label)} · ${project.brief.grade.score}</button><span class="grade-burst" aria-hidden="true">${'<svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg>'.repeat(6)}</span><span class="grade-pop" hidden><span class="grade-desc">${escapeHtml(gradeDescriptions[project.brief.grade.tier] || '')}</span>${project.brief.grade.factors.map(f => `<span class="grade-bar"><span>${escapeHtml(f.name)}</span><span class="grade-track"><i style="width:${Math.round((f.points / f.max) * 100)}%"></i></span><b>${f.points}/${f.max}</b></span>`).join('')}</span></span>` : ''}`;
-  const gradePill = $('#gradePill');
-  if (gradePill) {
+  const gradePill = project.brief.grade ? $('#gradePill') : null;
+  if (gradePill && gradePill.parentElement) {
     gradePill.addEventListener('click', () => {
       const pop = gradePill.parentElement.querySelector('.grade-pop'); if (!pop) return;
       const open = pop.hidden;
